@@ -12,7 +12,7 @@ mov dh, 5 ; read five sectors
 mov dl, [BOOT_DRIVE]
 call disk_load
 
-mov dx, [0x9000] ; reads the value from the first sector
+mov dx, [0x9000] ; reads the first two bytes (16 bits) from the second sector
 call print_hex
 
 mov dx, [0x9000 + 512] ; reads the value from the second sector
@@ -26,10 +26,15 @@ jmp $ ; loops forever program jumps to current instruction
 %include "print_hex.asm"
 %include "disk_load.asm"
 
-BOOT_DRIVE: db 0
+BOOT_DRIVE: db 0 ; the device we are booting from
 
+; we are the first sector
 times 510-($-$$) db 0
 dw 0xaa55
 
-times 256 dw 0xdada
-times 256 dw 0xface
+; sector 2
+dw 0xdada
+times 510 db 0
+; sector 3
+dw 0xface
+times 510 db 0

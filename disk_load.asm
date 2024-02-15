@@ -1,4 +1,5 @@
 disk_load:
+    ; dh specifies how many sectors to read ; dl specifies the device to read from 0x00 is floppy
     push dx
     
     mov ah, 0x02 ; Tells BIOS we want to Read from a Device
