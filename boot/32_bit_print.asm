@@ -28,3 +28,23 @@ print_string_pm_loop:
 print_string_pm_done:
     popa
     ret ; Return from the function
+
+clear_screen_pm:
+    pusha 
+    mov edx, VIDEO_MEMORY
+    mov ebx, 0     ; counter
+    mov ecx, 80*25 ; number of characters 
+    mov ax, 0x0720 ; blank space character
+
+clear_screen_loop:
+    mov [edx] , ax ; draw blank space character
+    add ebx, 1
+    add edx, 2
+
+    cmp ebx, ecx 
+    je clear_screen_done
+    jmp clear_screen_loop
+    
+clear_screen_done:
+    popa 
+    ret
