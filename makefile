@@ -4,7 +4,7 @@ DD=dd
 
 SRC_DIR=.
 BUILD_DIR=./build
-BOOT_SECT_SRC=$(SRC_DIR)/boot_sect.asm
+BOOT_SECT_SRC=$(SRC_DIR)/boot/boot_sect.asm
 BOOT_SECT_BIN=$(BUILD_DIR)/boot_sect.bin
 FLOPPY_IMG=$(BUILD_DIR)/floppy.img
 
