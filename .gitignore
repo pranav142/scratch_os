@@ -2,4 +2,5 @@
 *.img
 learn
 
+kernel.dis
 build

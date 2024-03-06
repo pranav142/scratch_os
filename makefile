@@ -24,6 +24,9 @@ FLOPPY_IMG=$(BUILD_DIR)/floppy.img
 
 all: build_dir build_floppy
 
+run: all 
+	qemu-system-x86_64 -boot order=a -drive file=$(FLOPPY_IMG),format=raw,index=0,if=floppy
+
 build_dir:
 	mkdir -p $(BUILD_DIR)
 
@@ -42,7 +45,10 @@ build_floppy: create_os_image
 	$(DD) if=/dev/zero of=$(FLOPPY_IMG) bs=1024 count=1440
 	$(DD) if=$(OS_BIN) of=$(FLOPPY_IMG) conv=notrunc
 
+kernel.dis : $(KERNEL_BIN)
+	ndisasm -b 32 $< > $@
+
 clean:
 	rm -rf $(BUILD_DIR)
 
-.PHONY: all build_dir build_boot compile_kernel create_os_image build_floppy clean
+.PHONY: all run build_dir build_boot compile_kernel create_os_image build_floppy clean
