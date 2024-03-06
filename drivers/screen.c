@@ -1,4 +1,5 @@
 #include "screen.h"
+#include "ports.h"
 
 int get_screen_offset(int col, int row) { 
     return 2 * (row * MAX_COLS + col);

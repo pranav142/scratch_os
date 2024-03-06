@@ -12,5 +12,6 @@
 
 void clear_screen(void);
 void print(char *message);
+void print_at(char* message, int col, int row);
 
 #endif
