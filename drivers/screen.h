@@ -13,5 +13,7 @@
 void clear_screen(void);
 void print(char *message);
 void print_at(char* message, int col, int row);
+void scroll_screen_up();
+void handle_scroll_screen();
 
 #endif

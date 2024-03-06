@@ -56,6 +56,8 @@ void print_char(char character, int col, int row) {
     }
 
     set_cursor_offset(offset/2);
+    // scrolls if cursor is off the screen
+    handle_scroll_screen();
 }
 
 void print_at(char* message, int col, int row) { 
@@ -83,4 +85,35 @@ void clear_screen() {
     }
 
     set_cursor_offset(calculate_cursor_offset(0, 0));
+}
+
+void scroll_screen_up() { 
+    // move all content by 1 row
+    char *video_memory = (char *) VIDEO_ADDRESS;
+
+    for (int row = 0; row < MAX_ROWS - 1; row++) { 
+        for (int col = 0; col < MAX_COLS; col ++) { 
+            int current_offset = get_screen_offset(col, row);
+            int next_offset = get_screen_offset(col, row + 1);
+    
+            video_memory[current_offset] = video_memory[next_offset];
+            video_memory[current_offset + 1] = video_memory[next_offset + 1];
+        }
+    }
+
+    // erase last line
+    int last_line_start = get_screen_offset(0, MAX_ROWS-1);
+    for (int col = 0; col < MAX_COLS - 1; col++) { 
+        video_memory[last_line_start + col * 2] = ' '; 
+        video_memory[last_line_start + col * 2 + 1] = WHITE_ON_BLACK; 
+    }
+    // moves the cursor up by one
+    set_cursor_offset(get_cursor_offset()/2 - MAX_COLS); 
+}
+
+void handle_scroll_screen() { 
+    int last_line_offset = get_screen_offset(0, MAX_ROWS);
+    if (get_cursor_offset() >= last_line_offset) { 
+        scroll_screen_up();
+    } 
 }
