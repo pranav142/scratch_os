@@ -1,10 +1,13 @@
 #include "../drivers/screen.h"
 #include "../drivers/ports.h"
+#include "idt.h"
 
 void main() {
-    for (int i; i < 100; i++) { 
-        print("hello\n");
-    } 
+    IDT_initialize();
+
+    clear_screen();
+    print("Initalized IDT\n");
+    print("Hello World!");
 }
 
 

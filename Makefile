@@ -23,6 +23,8 @@ C_SOURCES=$(wildcard kernel/*.c drivers/*.c)
 C_HEADERS=$(wildcard kernel/*.h drivers/*.h)
 C_OBJECTS=$(patsubst %, $(BUILD_DIR)/%.o, $(notdir $(basename $(C_SOURCES))))
 
+ASM_SOURCES=$(wildcard kernel/*.asm drivers/*.asm)
+ASM_OBJECTS=$(patsubst %, $(BUILD_DIR)/%.o, $(notdir $(basename $(ASM_SOURCES))))
 
 all: build_dir build_floppy
 
@@ -35,12 +37,14 @@ build_dir:
 build_boot: $(BOOT_SECT_SRC) | build_dir
 	$(ASM) $(ASMFLAGS) $< -o $(BOOT_SECT_BIN)
 
+$(ASM_OBJECTS): $(ASM_SOURCES)
+	$(foreach src,$(ASM_SOURCES), $(ASM) $(src) -f elf -o $(BUILD_DIR)/$(notdir $(src:.asm=.o));)
+
 $(C_OBJECTS): $(C_SOURCES) $(C_HEADERS)
 	$(foreach src,$(C_SOURCES), $(CC) $(CFLAGS) -c $(src) -o $(BUILD_DIR)/$(notdir $(src:.c=.o));)
 
-compile_kernel: $(KERNEL_ENTRY_SRC) $(C_OBJECTS)
-	$(ASM) $(KERNEL_ENTRY_SRC) -f elf -o $(KERNEL_ENTRY_OBJ)
-	ld -m elf_i386 -o $(KERNEL_BIN) -Ttext 0x1000 $(KERNEL_ENTRY_OBJ) $(C_OBJECTS) --oformat binary
+compile_kernel: $(KERNEL_ENTRY_OBJ) $(C_OBJECTS) $(ASM_OBJECTS)
+	ld -m elf_i386 -o $(KERNEL_BIN) -Ttext 0x1000 $^ --oformat binary
 
 create_os_image: build_boot compile_kernel
 	cat $(BOOT_SECT_BIN) $(KERNEL_BIN) > $(OS_BIN)
