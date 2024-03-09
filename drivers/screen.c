@@ -117,3 +117,98 @@ void handle_scroll_screen() {
         scroll_screen_up();
     } 
 }
+
+void printf(const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+
+    while (*format) {
+        if (*format == '%') {
+            format++; 
+            switch (*format) {
+                case 'c': {
+                    char c = (char)va_arg(args, int); // Promoted to int
+                    print_char(c, -1, -1);
+                    break;
+                }
+                case 's': {
+                    char* s = va_arg(args, char*);
+                    print(s);
+                    break;
+                }
+                case 'd':
+                case 'i': {
+                    int i = va_arg(args, int);
+                    print_number(i, 10, true); // Base 10, signed
+                    break;
+                }
+                case 'u': {
+                    unsigned int u = va_arg(args, unsigned int);
+                    print_number(u, 10, false); // Base 10, unsigned
+                    break;
+                }
+                case 'x':
+                case 'X': {
+                    unsigned int x = va_arg(args, unsigned int);
+                    print_number(x, 16, false); // Base 16, unsigned
+                    break;
+                }
+                case 'p': {
+                    void* p = va_arg(args, void*);
+                    print("0x");
+                    print_number((unsigned long)p, 16, false); // Base 16, unsigned
+                    break;
+                }
+                case 'o': {
+                    unsigned int o = va_arg(args, unsigned int);
+                    print_number(o, 8, false); // Base 8, unsigned
+                    break;
+                }
+                case '%': {
+                    print_char('%', -1, -1);
+                    break;
+                }
+            }
+        } else {
+            print_char(*format, -1, -1);
+        }
+        format++;
+    }
+
+    va_end(args);
+}
+
+const char possibleChars[] = "0123456789abcdef"; 
+
+void print_number(int num, int radix, bool isSigned) {
+    char buffer[33]; 
+    char* ptr = &buffer[sizeof(buffer) - 1]; 
+    *ptr = '\0'; 
+
+    if (isSigned && num < 0) {
+        print_char('-', -1, -1); 
+        num = -num; 
+    }
+
+    if (num == 0) {
+        print_char('0', -1, -1);
+        return;
+    }
+
+    while (num != 0) {
+        int remainder = num % radix;
+        *--ptr = (remainder < 10) ? (char)(remainder + '0') : (char)(remainder - 10 + 'a'); 
+        num /= radix;
+    }
+
+    // Print the number
+    while (*ptr) {
+        print_char(*ptr++, -1 , -1);
+    }
+}
+
+
+
+
+
+

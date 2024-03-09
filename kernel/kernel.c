@@ -7,7 +7,8 @@ void main() {
 
     clear_screen();
     print("Initalized IDT\n");
-    print("Hello World!");
+    print("Hello World!\n");
+    printf("Formatted String num monkeys %d press %c to quit\n", 20, 'q');
 }
 
 
