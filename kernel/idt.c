@@ -19,7 +19,7 @@ IDTDescriptor g_IDTDescriptor = { sizeof(g_IDT) - 1, g_IDT };
 
 void __attribute__((cdecl)) IDT_Load(IDTDescriptor* idtDescriptor);
 
-void IDT_SetGate(int interrupt, void * ISR_Addr, uint8_t segment_selector, uint8_t flags) { 
+void IDT_SetGate(int interrupt, void * ISR_Addr, uint16_t segment_selector, uint8_t flags) { 
     g_IDT[interrupt].OffsetLow = ((uint32_t)ISR_Addr) & 0xFFFF;
     g_IDT[interrupt].SegmentSelector = segment_selector;
     g_IDT[interrupt].Unused = 0;

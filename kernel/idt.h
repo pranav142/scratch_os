@@ -13,10 +13,13 @@ typedef enum {
     IDT_FLAG_RING_2         = (2 << 5),
     IDT_FLAG_RING_3         = (3 << 5),
 
-    IDT_FLAG_PRESENT        = (1 << 7),
+    IDT_FLAG_PRESENT        = 0x80,
 } IDT_FLAGS;
 
 void IDT_initialize();
 void IDT_disableGate(int interrupt);
 void IDT_enableGate(int interrupt);
-void IDT_SetGate(int interrupt, void * ISR_Addr, uint8_t segment_selector, uint8_t flags);
+void IDT_SetGate(int interrupt, void* ISR_Addr, uint16_t segment_selector, uint8_t flags);
+
+#define CODE_SEGMENT 0x08
+#define DATA_SEGMENT 0x10
