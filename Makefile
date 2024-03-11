@@ -46,7 +46,7 @@ $(ASM_OBJECTS): $(ASM_SOURCES)
 $(C_OBJECTS): $(C_SOURCES) $(C_HEADERS)
 	$(foreach src,$(C_SOURCES), $(CC) $(CFLAGS) -c $(src) -o $(BUILD_DIR)/$(notdir $(src:.c=.o));)
 
-compile_kernel_elf: $(KERNEL_ENTRY_OBJ) $(C_OBJECTS) $(ASM_OBJECTS)
+compile_kernel_elf: $(KERNEL_ENTRY_OBJ) $(C_OBJECTS) $(ASM_OBJECTS) 
 	ld -m elf_i386 -T linker.ld -o $(KERNEL_ELF) -Ttext 0x1000 $^ 
 
 strip_kernel_for_bin: compile_kernel_elf

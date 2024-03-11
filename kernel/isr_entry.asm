@@ -2,11 +2,26 @@
 
 extern ISR_Handler
 
-global ISR1
-ISR1:
+%macro ISR_NOERRORCODE 1
+
+global ISR%1
+ISR%1:
   push 0
-  push 1
+  push %1
   jmp isr_common
+
+%endmacro
+
+%macro ISR_ERRORCODE 1
+
+global ISR%1
+ISR%1:
+  push %1
+  jmp isr_common
+
+%endmacro
+
+%include "kernel/isr.inc"
 
 isr_common:
   pusha

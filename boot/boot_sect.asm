@@ -29,7 +29,7 @@ load_kernel:
     call print_string
 
     mov bx, KERNEL_OFFSET ; Data will be stored at the offset
-    mov dh, 15 
+    mov dh, 50
     mov dl, [BOOT_DRIVE]
     call disk_load ; loads first 15 sectors 
 
