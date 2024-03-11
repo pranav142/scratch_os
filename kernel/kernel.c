@@ -4,15 +4,15 @@
 #include "isr.h"
 
 void main() {
+    clear_screen();
+    printf("Welcome to Scratch OS \n");
+
     IDT_initialize();
     ISR_initialize(); 
-  
-    clear_screen();
-    print("Initalized IDT\n");
-    print("Hello World!\n");
-    printf("Formatted String num monkeys %d press %c to quit\n", 20, 'q');
-    
-    __asm__("int $0x1");
+    printf("Interrupts Initialized\n");
+
+    printf("test exception interrupt 0x0 division by 0\n");
+    __asm__("int $0x0");
 }
 
 
