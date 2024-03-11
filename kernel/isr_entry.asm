@@ -2,10 +2,10 @@
 
 extern ISR_Handler
 
-global ISR0
-ISR0:
+global ISR1
+ISR1:
   push 0
-  push 0
+  push 1
   jmp isr_common
 
 isr_common:

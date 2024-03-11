@@ -12,7 +12,7 @@ void main() {
     print("Hello World!\n");
     printf("Formatted String num monkeys %d press %c to quit\n", 20, 'q');
     
-    __asm__("int $0x00");
+    __asm__("int $0x1");
 }
 
 

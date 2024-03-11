@@ -5,7 +5,7 @@ IDT_Load:
     push ebp
     mov ebp, esp
 
-    mov eax, [ebp + 8]
+    mov eax, [esp + 8]
     lidt [eax]
 
     mov esp, ebp
