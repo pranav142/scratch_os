@@ -37,6 +37,9 @@ debug: all
 build_dir:
 	mkdir -p $(BUILD_DIR)
 
+generate_intterrupts:
+	python3 ./scripts/interrupts.py
+
 build_boot: $(BOOT_SECT_SRC) | build_dir
 	$(ASM) $(ASMFLAGS) $< -o $(BOOT_SECT_BIN)
 
@@ -55,7 +58,7 @@ strip_kernel_for_bin: compile_kernel_elf
 create_os_image: build_boot strip_kernel_for_bin
 	cat $(BOOT_SECT_BIN) $(KERNEL_BIN) > $(OS_BIN)
 
-build_floppy: create_os_image
+build_floppy: generate_intterrupts create_os_image
 	$(DD) if=/dev/zero of=$(FLOPPY_IMG) bs=1024 count=1440
 	$(DD) if=$(OS_BIN) of=$(FLOPPY_IMG) conv=notrunc
 

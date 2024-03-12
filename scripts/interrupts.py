@@ -1,7 +1,7 @@
 import os
 
-ASM_FILE = "../kernel/isr.inc"
-C_FILE = "../kernel/isr_gen.c"
+ASM_FILE = "./kernel/isr.inc"
+C_FILE = "./kernel/isr_gen.c"
 
 interrupts_with_error = {8, 10, 11, 12, 13, 14, 17}
 

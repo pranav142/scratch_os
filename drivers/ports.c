@@ -25,3 +25,16 @@ void kernel_Panic() {
     __asm__("cli\n\t"  
             "hlt");   
 }
+
+void io_wait() { 
+    // volatile prevents compiler optimization
+    __asm__ volatile ("outb %%al, $0x80" : : "a"(0));
+}
+
+void enable_interrupts() { 
+    __asm__ ("sti");
+}
+
+void disable_interrupts() { 
+    __asm__ ("cli");
+}
