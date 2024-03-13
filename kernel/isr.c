@@ -2,7 +2,7 @@
 #include "idt.h"
 #include "../drivers/screen.h"
 #include "../drivers/ports.h"
-#include "irq.h"
+
 ISRHandler g_ISRHandlers[256];
 
 static const char* const g_Exceptions[] = {
@@ -47,10 +47,6 @@ void set_ISRHandler(int interrupt, ISRHandler handler ) {
 
 void print_handler_debug_info(Registers* regs) { 
     printf("Unhandled exception %d %s\n", regs->interrupt, g_Exceptions[regs->interrupt]);
-        initialize_PIC();
-    print("PIC initialized\n");
-    printf("test exception interrupt 0x0 division by 0\n");
-    // __asm__("int $0x21");, regs->ecx, regs->edx, regs->esi, regs->edi);
     printf("  esp=%x  ebp=%x  eip=%x  eflags=%x  cs=%x  ds=%x  ss=%x\n",
             regs->esp, regs->ebp, regs->eip, regs->eflags, regs->cs, regs->ds, regs->ss);
     printf("  interrupt=%x  errorcode=%x\n", regs->interrupt, regs->error);

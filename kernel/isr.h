@@ -15,3 +15,5 @@ typedef struct
 } __attribute__((packed)) Registers;
 
 typedef void (*ISRHandler)(Registers* regs);
+
+void set_ISRHandler(int interrupt, ISRHandler handler);
