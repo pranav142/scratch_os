@@ -48,8 +48,13 @@ void print_char(char character, int col, int row) {
         offset = get_screen_offset(0, row+1);
     } else if (character=='\t'){ 
         offset += 16;
-    }
-    else {    
+    } else if (character=='\b'){ 
+        if (offset > 0) {
+            offset -= 2; 
+            video_memory[offset] = ' '; 
+            video_memory[offset + 1] = WHITE_ON_BLACK; 
+        }
+    } else {    
         video_memory[offset] = character;
         video_memory[offset + 1] = WHITE_ON_BLACK;
         offset += 2;
