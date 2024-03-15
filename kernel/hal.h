@@ -5,4 +5,5 @@
 #include "irq.h"
 #include "../drivers/keyboard.h"
 #include "../drivers/pic.h"
+#include "../drivers/timer.h"
 void HAL_initialize();
