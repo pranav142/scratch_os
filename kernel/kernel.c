@@ -8,9 +8,11 @@ void main() {
     HAL_initialize();
     printf("HAL initialized\n");
     
-    printf("sleeping for 5 seconds");
+    printf("sleeping for 5 seconds\n");
+    uint64_t start = time_now();
     sleep(5000);
-    printf("done sleeping");
+    uint64_t end = time_now();
+    printf("done sleeping %d\n", end - start);
 }
 
 

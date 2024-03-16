@@ -1,12 +1,12 @@
 #include "timer.h"
 
 #define MS_TO_TICKS(s) ((TIMER_FREQ * s) / 1000) 
+#define TICKS_TO_MS(t) (t * (1000 / TIMER_FREQ))
 
 uint64_t volatile ticks;
 
 void timer_handler(Registers* regs) { 
     ticks ++; 
-    // printf("ticks: %d\n", ticks);
 }
 
 void timer_pit_init(uint32_t divisor) { 
@@ -23,7 +23,13 @@ void timer_initialize() {
 
 void sleep(uint32_t milliseconds) { 
     uint64_t target_ticks = ticks + MS_TO_TICKS(milliseconds);
-    if (ticks < target_ticks) { 
-        __asm__("hlt"); 
+    while (ticks < target_ticks) { 
+        __asm__ volatile ("hlt"); 
     }
 }
+
+int time_now() { 
+    return TICKS_TO_MS(ticks);
+}
+
+

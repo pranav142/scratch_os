@@ -32,3 +32,4 @@ typedef enum {
 } PIT_FLAGS;
 
 void set_pit_channel_count(uint8_t channel, uint32_t count);
+uint16_t read_pit_count();

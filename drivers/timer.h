@@ -9,3 +9,4 @@
 
 void timer_initialize();
 void sleep(uint32_t milliseconds);
+int time_now();
