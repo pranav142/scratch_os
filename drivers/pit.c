@@ -13,7 +13,7 @@ uint16_t read_pit_count() {
 
   port_byte_out(MODE_COMMAND_PORT, 0b0000000);
 
-  count = port_byte_in(CHANNEL0_PORT); // Low byte
+  count = port_byte_in(CHANNEL0_PORT); 
   count |= port_byte_in(CHANNEL0_PORT) << 8;
 
   enable_interrupts();

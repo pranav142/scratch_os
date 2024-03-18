@@ -12,6 +12,8 @@ call print_string
 
 call load_kernel
 
+call do_e820
+
 call switch_to_pm
 
 jmp $
@@ -22,6 +24,7 @@ jmp $
 %include "boot/disk_load.asm"
 %include "boot/GDT.asm"
 %include "boot/switch_to_pm.asm"
+%include "boot/memdetect.asm"
 
 [bits 16]
 load_kernel:
@@ -31,14 +34,14 @@ load_kernel:
     mov bx, KERNEL_OFFSET ; Data will be stored at the offset
     mov dh, 50
     mov dl, [BOOT_DRIVE]
-    call disk_load ; loads first 15 sectors 
+    call disk_load  
 
     ret
 
 [bits 32]
 BEGIN_PM:
     mov ebx , MSG_32_MODE
-    call print_string_pm 
+    call print_string_pm
 
     call clear_screen_pm
 
@@ -47,9 +50,9 @@ BEGIN_PM:
     jmp $
 
 BOOT_DRIVE: db 0
-MSG_REAL_MODE: db "Starting in 16 bit real Mode ", 0
-MSG_32_MODE: db "Now in 32 bit protected Mode ", 0
-KERNEL_LOAD_MSG: db "Loading into the Kernel ", 0
+MSG_REAL_MODE: db "real", 0
+MSG_32_MODE: db "32", 0
+KERNEL_LOAD_MSG: db "kernel", 0
 
 
 ; we are the first sector
