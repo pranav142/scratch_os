@@ -116,6 +116,7 @@ void handle_scroll_screen() {
   }
 }
 
+// TODO: Remake this function to support long longs and long type
 void printf(const char *format, ...) {
   va_list args;
   va_start(args, format);
@@ -147,7 +148,7 @@ void printf(const char *format, ...) {
       }
       case 'x':
       case 'X': {
-        unsigned int x = va_arg(args, unsigned int);
+        unsigned long long x = va_arg(args, unsigned long long);
         print_number(x, 16, false); // Base 16, unsigned
         break;
       }
@@ -161,7 +162,7 @@ void printf(const char *format, ...) {
         unsigned int o = va_arg(args, unsigned int);
         print_number(o, 8, false); // Base 8, unsigned
         break;
-      }
+      } 
       case '%': {
         print_char('%', -1, -1);
         break;
@@ -179,7 +180,7 @@ void printf(const char *format, ...) {
 const char possibleChars[] = "0123456789abcdef";
 
 void print_number(int num, int radix, bool isSigned) {
-  char buffer[33];
+  char buffer[64];
   char *ptr = &buffer[sizeof(buffer) - 1];
   *ptr = '\0';
 
