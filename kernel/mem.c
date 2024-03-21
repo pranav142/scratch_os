@@ -10,7 +10,7 @@ void read_memory_map() {
   uint16_t num_entries = *(uint16_t *)MEMORY_MAP_COUNT_ADDR;
 
   if (num_entries > MAX_ENTRIES) {
-    printf("Not enoguh space in global memory map to store all entries\n");
+    printf("Not enough space in global memory map to store all entries\n");
     return;
   }
 

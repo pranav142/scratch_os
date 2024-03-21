@@ -3,7 +3,7 @@ ASMFLAGS=-f bin
 DD=dd
 
 CC=gcc
-CFLAGS = -ffreestanding -c -m32 -fno-pic -fno-pie -g -fno-stack-protector -fno-builtin
+CFLAGS = -ffreestanding -c -m32 -fno-pic -fno-pie -g -fno-stack-protector -fno-builtin 
 LDFLAGS = -Ttext 0x1000 --oformat binary
 
 SRC_DIR=.

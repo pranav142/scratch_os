@@ -1,5 +1,4 @@
 #include "kernel.h"
-#include "../drivers/timer.h"
 #include "mem.h"
 
 int main() {

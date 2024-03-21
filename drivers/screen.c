@@ -146,23 +146,19 @@ void printf(const char *format, ...) {
         print_number(u, 10, false); // Base 10, unsigned
         break;
       }
+      case 'p':
       case 'x':
       case 'X': {
-        unsigned long long x = va_arg(args, unsigned long long);
-        print_number(x, 16, false); // Base 16, unsigned
-        break;
-      }
-      case 'p': {
-        void *p = va_arg(args, void *);
+        unsigned int x = va_arg(args, unsigned int);
         print("0x");
-        print_number((unsigned long)p, 16, false); // Base 16, unsigned
+        print_number(x, 16, false); // Base 16, unsigned
         break;
       }
       case 'o': {
         unsigned int o = va_arg(args, unsigned int);
         print_number(o, 8, false); // Base 8, unsigned
         break;
-      } 
+      }
       case '%': {
         print_char('%', -1, -1);
         break;
@@ -180,29 +176,27 @@ void printf(const char *format, ...) {
 const char possibleChars[] = "0123456789abcdef";
 
 void print_number(int num, int radix, bool isSigned) {
-  char buffer[64];
-  char *ptr = &buffer[sizeof(buffer) - 1];
-  *ptr = '\0';
+  char buffer[65];
+  buffer[64] = '\0';
+  int pos = 63;
+  unsigned int unum = (unsigned int)num;
 
   if (isSigned && num < 0) {
     print_char('-', -1, -1);
-    num = -num;
   }
 
-  if (num == 0) {
+  if (unum == 0) {
     print_char('0', -1, -1);
     return;
   }
 
-  while (num != 0) {
-    int remainder = num % radix;
-    *--ptr = (remainder < 10) ? (char)(remainder + '0')
-                              : (char)(remainder - 10 + 'a');
-    num /= radix;
+  while (unum != 0) {
+    uint32_t remainder = unum % radix;
+    buffer[--pos] = possibleChars[remainder];
+    unum /= radix;
   }
 
-  // Print the number
-  while (*ptr) {
-    print_char(*ptr++, -1, -1);
+  for (int i = pos; buffer[i] != '\0'; i++) {
+    print_char(buffer[i], -1, -1);
   }
 }
