@@ -9,4 +9,10 @@ int main() {
   printf("HAL initialized\n");
   read_memory_map();
   print_memory_map();
+  initialize_physical_bit_map();
+  for (int i = 0; i < 100; i ++){ 
+    void* mem = allocate_block();
+    free_block(mem);
+  }
+  print_physical_bit_map(0, 10);
 }
