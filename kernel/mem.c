@@ -3,8 +3,8 @@
 MemoryInfo g_MemInfo;
 E820MemoryMapEntry g_MemoryMapEntries[MAX_ENTRIES];
 uint16_t g_PhysicalBitmap[BITMAP_SIZE];
-PageTableEntry g_PageTable[MAX_PAGE_ENTRIES];
-PageDirectoryEntry g_PageDirectory[MAX_PAGE_ENTRIES];
+
+PageDirectory *current_page_directory = NULL;
 
 void read_memory_map() {
   E820MemoryMapEntry *entry = (E820MemoryMapEntry *)MEMORY_MAP_ADDR;
@@ -101,6 +101,70 @@ void *allocate_block() {
 void free_block(void *mem_addr) {
   int block = ADDR_TO_BLOCK((int)mem_addr);
   mark_physical_block_unused(block);
-} 
+}
 
+PageTableEntry *get_page(void *virtual_address) {
+  PageDirectory *pd = current_page_directory;
+  if (pd == NULL) {
+    printf("Page Directory Not Defined\n");
+    return NULL;
+  }
 
+  PageDirectoryEntry *pd_entry = &pd->entries[PD_INDEX((int)virtual_address)];
+  if (!TEST_FLAG(pd_entry, PDE_PRESENT)) {
+    printf("Page Table Not Defined\n");
+    return NULL;
+  }
+
+  PageTable *pt = (PageTable *)GET_ADDR(pd_entry);
+
+  PageTableEntry *page = &pt->entries[PT_INDEX((int)virtual_address)];
+
+  return page;
+}
+
+void allocate_page(PageTableEntry *page) {
+  void *block = allocate_block();
+  if (!block) {
+    printf("Could not find free block\n");
+    return;
+  }
+
+  SET_ADDR(page, (int)block);
+  SET_FLAG(page, PTE_PRESENT);
+}
+
+void free_page(PageTableEntry *page) {
+  void *physical_address = (void *)GET_ADDR(page);
+  if (physical_address) {
+    free_block(physical_address);
+  }
+
+  CLEAR_FLAG(page, PTE_PRESENT);
+}
+
+void map_page(void *physical_address, void *virtual_address) {
+  PageDirectory *pd = current_page_directory;
+  if (!pd) {
+    printf("Page directory doesn't exist");
+    return;
+  }
+
+  PageDirectoryEntry *pd_entry = &pd->entries[PD_INDEX((int)virtual_address)];
+  if (!TEST_FLAG(pd_entry, PDE_PRESENT)) {
+    PageTable *page_table = (PageTable *)allocate_block(); 
+    if (!page_table) {
+      printf("Not enough memory to allocate page table\n");
+      return;
+    }
+
+    SET_FLAG(pd_entry, PDE_PRESENT);
+    SET_FLAG(pd_entry, PDE_READ_WRITE);
+    SET_ADDR(pd_entry, (int)page_table);
+  }
+
+  PageTable* page_table = (PageTable *)GET_ADDR(pd_entry);
+  PageTableEntry* page = &page_table->entries[PT_INDEX((int)virtual_address)];
+  SET_ADDR(page, (int)physical_address);
+  SET_FLAG(page, PTE_PRESENT);
+}

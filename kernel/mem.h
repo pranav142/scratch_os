@@ -2,6 +2,7 @@
 
 #include "../drivers/screen.h"
 #include <stdint.h>
+#include <stddef.h>
 
 typedef struct {
   uint64_t base_addr;
@@ -23,32 +24,55 @@ enum E820MemoryBlockType {
   E820_BAD_MEMORY = 5,
 };
 
-typedef struct {
-  uint32_t present : 1;       // Page present in memory
-  uint32_t rw : 1;            // Read-only if clear, readwrite if set
-  uint32_t user : 1;          // Supervisor level only if clear
-  uint32_t writeThrough : 1;  // Write-through caching if set
-  uint32_t cacheDisabled : 1; // Cache disabled if set
-  uint32_t accessed : 1;      // Has the page been accessed since last refresh?
-  uint32_t dirty : 1;     // Has the page been written to since last refresh?
-  uint32_t pat : 1;       // Page Attribute Table
-  uint32_t global : 1;    // Global page if set
-  uint32_t available : 3; // Available for system programmer use
-  uint32_t physical_memoty_block : 20;
-} __attribute__((packed)) PageTableEntry;
+#define PD_INDEX(addr) (addr >> 22)
+#define PT_INDEX(addr) ((addr >> 12) & 0x3FF)
+#define PT_OFFSET(addr) (addr & 0xFFF)
+#define SET_FLAG(entry, flag) (*entry |= flag)
+#define CLEAR_FLAG(entry, flag) (*entry &= ~flag)
+#define TEST_FLAG(entry, flag) (*entry & flag)
+#define SET_ADDR(entry, addr) (*entry = (*entry & ~0xFFFFF000) | (addr & 0xFFFFF000))
+#define GET_ADDR(entry) (*entry & 0xFFFFF000)
 
-typedef struct {
-  uint32_t present : 1;       // Page present in memory
-  uint32_t rw : 1;            // Read-only if clear, readwrite if set
-  uint32_t user : 1;          // Supervisor level only if clear
-  uint32_t writeThrough : 1;  // Write-through caching if set
-  uint32_t cacheDisabled : 1; // Cache disabled if set
-  uint32_t accessed : 1;      // Has the page been accessed since last refresh?
-  uint32_t dirty : 1;     // Has the page been written to since last refresh?
-  uint32_t pat : 1;       // Page Attribute Table
-  uint32_t available : 4; // Available for system programmer use
-  uint32_t physical_memoty_block : 20;
-} __attribute__((packed)) PageDirectoryEntry;
+#define TABLES_PER_DIRECTORY 1024
+#define PAGES_PER_TABLE 1024
+
+typedef uint32_t PageTableEntry;
+typedef uint32_t PageDirectoryEntry;
+
+typedef enum {
+    PTE_PRESENT       = 0x01,
+    PTE_READ_WRITE    = 0x02,
+    PTE_USER          = 0x04,
+    PTE_WRITE_THROUGH = 0x08,
+    PTE_CACHE_DISABLE = 0x10,
+    PTE_ACCESSED      = 0x20,
+    PTE_DIRTY         = 0x40,
+    PTE_PAT           = 0x80,
+    PTE_GLOBAL        = 0x100,
+    PTE_FRAME         = 0xFFFFF000,   // bits 12+ first twenty bits of physical addr
+} PAGE_TABLE_FLAGS;
+
+typedef enum {
+    PDE_PRESENT       = 0x01,
+    PDE_READ_WRITE    = 0x02,
+    PDE_USER          = 0x04,
+    PDE_WRITE_THROUGH = 0x08,
+    PDE_CACHE_DISABLE = 0x10,
+    PDE_ACCESSED      = 0x20,
+    PDE_DIRTY         = 0x40,          // 4MB entry only
+    PDE_PAGE_SIZE     = 0x80,          // 0 = 4KB page, 1 = 4MB page
+    PDE_GLOBAL        = 0x100,         // 4MB entry only
+    PDE_PAT           = 0x2000,        // 4MB entry only
+    PDE_FRAME         = 0xFFFFF000,    // bits 12+ first 20 bits of table address
+} PAGE_DIR_FLAGS;
+
+typedef struct { 
+  PageDirectoryEntry entries[TABLES_PER_DIRECTORY];
+} PageDirectory;
+
+typedef struct { 
+  PageTableEntry entries[PAGES_PER_TABLE];
+} PageTable;
 
 #define MEMORY_MAP_COUNT_ADDR 0x8000
 #define MEMORY_MAP_ADDR 0x8004
@@ -63,8 +87,6 @@ typedef struct {
 
 #define BLOCK_TO_ADDR(b) (b * BITMAP_BLOCK_SIZE) + MEMORY_START_ADDR
 #define ADDR_TO_BLOCK(a) (a - MEMORY_START_ADDR) / BITMAP_BLOCK_SIZE
-
-#define MAX_PAGE_ENTRIES 1024
 
 void read_memory_map();
 void print_memory_map();
