@@ -1,7 +1,7 @@
 [org 0x7c00]
 
 mov [ BOOT_DRIVE ], dl 
-KERNEL_OFFSET equ 0x1000 
+KERNEL_OFFSET equ 0x7e00
 
 ; Set the stack.
 mov bp , 0x9000 

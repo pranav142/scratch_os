@@ -1,4 +1,5 @@
 #include "mem.h"
+#include <stdint.h>
 
 MemoryInfo g_MemInfo;
 E820MemoryMapEntry g_MemoryMapEntries[MAX_ENTRIES];
@@ -99,7 +100,7 @@ void *allocate_block() {
 }
 
 void free_block(void *mem_addr) {
-  int block = ADDR_TO_BLOCK((int)mem_addr);
+  int block = ADDR_TO_BLOCK((uintptr_t)mem_addr);
   mark_physical_block_unused(block);
 }
 
@@ -110,7 +111,7 @@ PageTableEntry *get_page(void *virtual_address) {
     return NULL;
   }
 
-  PageDirectoryEntry *pd_entry = &pd->entries[PD_INDEX((int)virtual_address)];
+  PageDirectoryEntry *pd_entry = &pd->entries[PD_INDEX((uintptr_t)virtual_address)];
   if (!TEST_FLAG(pd_entry, PDE_PRESENT)) {
     printf("Page Table Not Defined\n");
     return NULL;
@@ -118,7 +119,7 @@ PageTableEntry *get_page(void *virtual_address) {
 
   PageTable *pt = (PageTable *)GET_ADDR(pd_entry);
 
-  PageTableEntry *page = &pt->entries[PT_INDEX((int)virtual_address)];
+  PageTableEntry *page = &pt->entries[PT_INDEX((uintptr_t)virtual_address)];
 
   return page;
 }
@@ -130,7 +131,7 @@ void allocate_page(PageTableEntry *page) {
     return;
   }
 
-  SET_ADDR(page, (int)block);
+  SET_ADDR(page, (uintptr_t)block);
   SET_FLAG(page, PTE_PRESENT);
 }
 
@@ -150,7 +151,7 @@ void map_page(void *physical_address, void *virtual_address) {
     return;
   }
 
-  PageDirectoryEntry *pd_entry = &pd->entries[PD_INDEX((int)virtual_address)];
+  PageDirectoryEntry *pd_entry = &pd->entries[PD_INDEX((uintptr_t)virtual_address)];
   if (!TEST_FLAG(pd_entry, PDE_PRESENT)) {
     PageTable *page_table = (PageTable *)allocate_block(); 
     if (!page_table) {
@@ -160,11 +161,15 @@ void map_page(void *physical_address, void *virtual_address) {
 
     SET_FLAG(pd_entry, PDE_PRESENT);
     SET_FLAG(pd_entry, PDE_READ_WRITE);
-    SET_ADDR(pd_entry, (int)page_table);
+    SET_ADDR(pd_entry, (uintptr_t)page_table);
   }
 
   PageTable* page_table = (PageTable *)GET_ADDR(pd_entry);
-  PageTableEntry* page = &page_table->entries[PT_INDEX((int)virtual_address)];
-  SET_ADDR(page, (int)physical_address);
+  PageTableEntry* page = &page_table->entries[PT_INDEX((uintptr_t)virtual_address)];
+  SET_ADDR(page, (uintptr_t)physical_address);
   SET_FLAG(page, PTE_PRESENT);
+}
+
+void initialize_virtual_memory_manager() { 
+  
 }
