@@ -10,3 +10,5 @@
 void timer_initialize();
 void sleep(uint32_t milliseconds);
 int time_now();
+void timer_pit_init(uint32_t divisor);
+void timer_handler(Registers *regs); 

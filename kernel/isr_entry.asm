@@ -21,7 +21,7 @@ ISR%1:
 
 %endmacro
 
-%include "kernel/isr.inc"
+%include "isr.inc"
 
 isr_common:
   pusha
