@@ -5,7 +5,7 @@ CC:=gcc
 CFLAGS:=-ffreestanding -c -m32 -fno-pic -fno-pie -g -fno-stack-protector -fno-builtin
 
 LD:=ld
-LDFLAGS:=-m elf_i386 -T stage2.ld
+LDFLAGS:=-m elf_i386 -T stage2.ld -Ttext 0x1000
 
 BUILD_DIR:=../../build/stage2
 
@@ -21,7 +21,7 @@ STAGE2_ELF=$(BUILD_DIR)/stage2.elf
 all: build_dir build
 
 build: $(ASM_OBJECTS) $(C_OBJECTS) $(DRIVER_OBJECTS) 
-	$(LD) $(LDFLAGS) -o $(STAGE2_ELF) -Ttext 0x1000 $^
+	$(LD) $(LDFLAGS) -o $(STAGE2_ELF) $^
 	objcopy -O binary $(STAGE2_ELF) $(STAGE2_BIN)
 
 build_dir:

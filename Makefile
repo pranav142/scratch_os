@@ -3,8 +3,9 @@ DD := dd
 FLOPPY_IMG:=build/floppy.img
 STAGE1_BIN:=build/stage1.bin
 STAGE2_BIN:=build/stage2.bin
-STAGE2_SECTORS:=5 
 KERNEL_BIN:=build/kernel.bin
+# This needs to be consistent with reserved sectors entry in FAT BPB and with the number of sectors Stage1 loads
+STAGE2_SECTORS:=9
 
 all: build_dir build_floppy
 
@@ -36,11 +37,12 @@ drivers:
 	$(MAKE) -C drivers
 
 build_floppy: generate_interrupts stage1 stage2 kernel drivers
-	$(DD) if=/dev/zero of=$(FLOPPY_IMG) bs=1024 count=1440
+	$(DD) if=/dev/zero of=$(FLOPPY_IMG) bs=512 count=2880
+	mkfs.fat -F 12 -n "NBOS" $(FLOPPY_IMG)
 	$(DD) if=$(STAGE1_BIN) of=$(FLOPPY_IMG) bs=512 count=1 conv=notrunc
-	$(DD) if=$(STAGE2_BIN) of=$(FLOPPY_IMG) bs=512 seek=1 conv=notrunc
-	$(DD) if=$(KERNEL_BIN) of=$(FLOPPY_IMG) bs=512 seek=$(STAGE2_SECTORS) conv=notrunc
-
+	$(DD) if=$(STAGE2_BIN) of=$(FLOPPY_IMG) bs=512 seek=1 count=$(STAGE2_SECTORS) conv=notrunc
+	mcopy -i $(FLOPPY_IMG) $(KERNEL_BIN) "::kernel.bin"
+ 
 clean:
 	rm -rf $(BUILD_DIR)
 

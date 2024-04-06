@@ -5,7 +5,7 @@ CC:=gcc
 CFLAGS:=-ffreestanding -c -m32 -fno-pic -fno-pie -g -fno-stack-protector -fno-builtin
 
 LD:=ld
-LDFLAGS:=-m elf_i386 -T kernel.ld
+LDFLAGS:=-m elf_i386 -T kernel.ld -Ttext 0x1000
 
 BUILD_DIR:=../build/kernel
 
@@ -24,7 +24,7 @@ build_dir:
 	mkdir -p $(BUILD_DIR)
 
 build: $(ASM_OBJECTS) $(C_OBJECTS) $(DRIVER_OBJECTS)
-	$(LD) $(LDFLAGS) -o $(KERNEL_ELF) -Ttext 0x1000 $^
+	$(LD) $(LDFLAGS) -o $(KERNEL_ELF) $^
 	objcopy -O binary $(KERNEL_ELF) $(KERNEL_BIN)
 
 $(BUILD_DIR)/%.o: %.asm
