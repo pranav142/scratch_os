@@ -46,8 +46,8 @@
 %endmacro
 
 ; bool __attribute__((cdecl)) disk_reset(uint8_t drive);
-global disk_reset
-disk_reset:
+global x86_disk_reset
+x86_disk_reset:
     push ebp
     mov ebp, esp
     push edx
@@ -79,8 +79,8 @@ disk_reset:
 ;                                     uint8_t head, uint16_t linear_segment,
 ;                                     uint16_t linear_offset);
 
-global disk_read
-disk_read:
+global x86_disk_read
+x86_disk_read:
     push ebp
     mov ebp, esp
     push edx
@@ -197,3 +197,41 @@ get_disk_params:
     ret
 
 
+; bool __attribute__((cdecl)) x86_get_disk_advanced_params(uint8_t drive, uint16_t segment, uint16_t offset)
+global x86_get_advanced_disk_params
+x86_get_advanced_disk_params:
+    push ebp
+    mov ebp, esp
+
+    push eax
+    push edx
+    push si
+
+    EnterRealMode
+
+    mov ah, 0x48
+    mov dl, [ebp + 8]
+
+    mov ax, [ebp + 12]
+    mov ds, ax
+    mov si, [ebp + 16]
+    
+    int 0x13
+    jc .error
+
+    mov eax, 1
+    jmp .done
+
+.error
+    mov eax, 0
+
+.done
+    EnterProtectedMode
+
+    pop si
+    pop edx
+    pop eax
+
+    mov esp, ebp
+    pop ebp
+    ret

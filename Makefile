@@ -5,7 +5,7 @@ STAGE1_BIN:=build/stage1.bin
 STAGE2_BIN:=build/stage2.bin
 KERNEL_BIN:=build/kernel.bin
 # This needs to be consistent with reserved sectors entry in FAT BPB and with the number of sectors Stage1 loads
-STAGE2_SECTORS:=9
+STAGE2_SECTORS:=19
 
 all: build_dir build_floppy
 

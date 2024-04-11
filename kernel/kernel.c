@@ -1,7 +1,7 @@
 #include "kernel.h"
 #include "mem.h"
 
-int main() {
+int __attribute__((section(".text.main"))) kernel_start() {
   clear_screen();
   printf("Welcome to Scratch OS \n");
 
@@ -15,4 +15,7 @@ int main() {
     free_block(mem);
   }
   print_physical_bit_map(0, 10);
+
+  for (;;);
+  return;
 }
