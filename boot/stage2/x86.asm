@@ -176,10 +176,13 @@ get_disk_params:
     mov esi, [ebp + 16]
     mov [esi], bx
 
-    and cl, 0x3f        ; bits 0-5 are max sectors
+    xor bx, bx
+    mov bl, cl
+    and bl, 0x3f        ; bits 0-5 are max sectors
     mov esi, [ebp + 20]
-    mov [esi], cx
+    mov [esi], bx
 
+    xor cx, cx
     mov cl, dh          ; heads - dh
     inc cx
     mov esi, [ebp + 24]
@@ -191,46 +194,6 @@ get_disk_params:
     pop ecx
     pop edx
     pop es
-
-    mov esp, ebp
-    pop ebp
-    ret
-
-
-; bool __attribute__((cdecl)) x86_get_disk_advanced_params(uint8_t drive, uint16_t segment, uint16_t offset)
-global x86_get_advanced_disk_params
-x86_get_advanced_disk_params:
-    push ebp
-    mov ebp, esp
-
-    push eax
-    push edx
-    push si
-
-    EnterRealMode
-
-    mov ah, 0x48
-    mov dl, [ebp + 8]
-
-    mov ax, [ebp + 12]
-    mov ds, ax
-    mov si, [ebp + 16]
-    
-    int 0x13
-    jc .error
-
-    mov eax, 1
-    jmp .done
-
-.error
-    mov eax, 0
-
-.done
-    EnterProtectedMode
-
-    pop si
-    pop edx
-    pop eax
 
     mov esp, ebp
     pop ebp

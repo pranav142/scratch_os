@@ -9,31 +9,25 @@
 void __attribute__((section(".text.main"))) main() {
   FAT12_BPB fat12_bpb;
   DISK disk;
-  Disk_Params disk_params;
   uint8_t drive_type;
   uint16_t cylinders, sectors, heads;
   disk.id = DRIVE_ID;
 
   clear_screen();
-  // if (!get_disk_params(disk.id, &disk.drive_type, &disk.cylinders,
-  //                      &disk.sectors, &disk.heads))
-  //   printf("failed ret\n");
+  if (!get_disk_params(disk.id, &disk.drive_type, &disk.cylinders,
+                       &disk.sectors, &disk.heads))
+    printf("failed ret\n");
 
-  // printf("DRIVE INFO:\ndrive type: %d, cylinders: %d, sectors: %d, heads:
-  // %d\n",
-  //        disk.drive_type, disk.cylinders, disk.sectors, disk.heads);
+  printf("DRIVE INFO:\ndrive type: %d, cylinders: %d, sectors: %d, heads: %d\n",
+         disk.drive_type, disk.cylinders, disk.sectors, disk.heads);
 
-  if (!get_advanced_disk_params(disk.id, &disk_params))
-    printf("failed to get advanced disk params\n");
-
-  printf("Advanced Drive info: %x \n", disk_params.sizeResultBuffer);
-
-  if (!disk_read(disk.id, BOOT_SECTOR, BOOT_SECTOR_LENGTH, boot_sect_address))
+  if (!disk_read(disk.id, BOOT_SECTOR, BOOT_SECTOR_LENGTH, boot_sect_address,
+                 disk.cylinders, disk.sectors))
     printf("failed to read disk\n");
 
   fat12_bpb = *(FAT12_BPB *)boot_sect_address;
   printf("\n\nFAT FILE SYSTEM INFO:\n");
-  // printFAT12BPB(&fat12_bpb);
+  printFAT12BPB(&fat12_bpb);
 
   //  read file system for the kernel
   // reading directories
