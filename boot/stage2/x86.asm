@@ -189,11 +189,3 @@ x86_get_disk_params:
     mov esp, ebp
     pop ebp
     ret
-
-;void __attribute__((cdecl)) x86_call_kernel_start(uint32_t kernel_addr);
-global x86_call_kernel_start
-x86_call_kernel_start:  
-    cli
-    jmp 0x10000
-
-

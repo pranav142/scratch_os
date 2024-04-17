@@ -14,13 +14,14 @@ C_SOURCES:=$(wildcard *.c)
 ASM_OBJECTS:=$(addprefix $(BUILD_DIR)/, $(ASM_SOURCES:.asm=.o))
 C_OBJECTS:=$(addprefix $(BUILD_DIR)/, $(C_SOURCES:.c=.o))
 DRIVER_OBJECTS:=../../build/drivers/screen.o ../../build/drivers/ports.o
+UTILS_OBJECTS:=../../build/utils/memtools.o
 
 STAGE2_BIN=../../build/stage2.bin
 STAGE2_ELF=$(BUILD_DIR)/stage2.elf
 
 all: build_dir build
 
-build: $(ASM_OBJECTS) $(C_OBJECTS) $(DRIVER_OBJECTS) 
+build: $(ASM_OBJECTS) $(C_OBJECTS) $(DRIVER_OBJECTS) $(UTILS_OBJECTS)
 	$(LD) $(LDFLAGS) -o $(STAGE2_ELF) $^
 	objcopy -O binary $(STAGE2_ELF) $(STAGE2_BIN)
 

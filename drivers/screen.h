@@ -1,6 +1,6 @@
 #pragma once
 
-#include "memory.h"
+#include "../utils/memtools.h"
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>

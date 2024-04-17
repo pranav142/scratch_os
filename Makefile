@@ -37,7 +37,10 @@ kernel:
 drivers:
 	$(MAKE) -C drivers
 
-build_floppy: generate_interrupts stage1 drivers stage2 kernel
+utils:
+	$(MAKE) -C utils
+
+build_floppy: generate_interrupts utils stage1 drivers stage2 kernel
 	$(DD) if=/dev/zero of=$(FLOPPY_IMG) bs=512 count=2880
 	mkfs.fat -F 12 -n "NBOS" $(FLOPPY_IMG)
 	$(DD) if=$(STAGE1_BIN) of=$(FLOPPY_IMG) bs=512 count=1 conv=notrunc
@@ -48,4 +51,4 @@ build_floppy: generate_interrupts stage1 drivers stage2 kernel
 clean:
 	rm -rf build
 
-.PHONY: all run qemu_debug debug build_dir generate_interrupts stage1 stage2 kernel drivers build_floppy clean
+.PHONY: all run qemu_debug debug build_dir generate_interrupts stage1 stage2 kernel drivers build_floppy clean utils

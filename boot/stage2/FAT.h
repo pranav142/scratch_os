@@ -1,6 +1,9 @@
 #pragma once
 
 #include "../../drivers/screen.h"
+#include "../../utils/memtools.h"
+#include "disk.h"
+#include "mem.h"
 #include <stdint.h>
 
 typedef struct {
@@ -55,4 +58,16 @@ typedef enum {
 } FileAttributes;
 
 #define DIRECTORY_ENTRY_BYTE_SIZE 32
+
 void printFAT12BPB(const FAT12_BPB *bpb);
+uint32_t get_next_cluster(uint8_t *FAT, uint32_t current_cluster);
+bool read_directory_buffer(FAT12_BPB *fat12_bpb, DISK *disk,
+                           Directory_Entry *directory_buffer);
+uint32_t get_starting_cluster(Directory_Entry *entry);
+void print_directory_entry(Directory_Entry *entry);
+Directory_Entry *find_file(const char *filename,
+                           Directory_Entry *directory_buffer,
+                           uint32_t directory_entry_count);
+bool read_FAT(uint8_t *fat_buffer, DISK *disk, FAT12_BPB *fat12_bpb);
+bool read_file(Directory_Entry *entry, DISK *disk, FAT12_BPB *fat12_bpb,
+               uint8_t *output_buffer, uint8_t *FAT);

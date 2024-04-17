@@ -1,16 +1,16 @@
-ENTRY(main)
+ENTRY(start)
+OUTPUT_FORMAT(elf32-i386)
+phys = 0x001000;
 
 SECTIONS
 {
-   . = 0x1000; 
-   .text : {
-        *(.text.main)
-        *(.text)
-    }
-    .data : {
-        *(.data)
-    }
-    .bss : {
-        *(.bss)
-    }
+    . = phys;
+
+    .entry              : { __entry_start = .;      *(.entry)   }
+    .text               : { __text_start = .;       *(.text)    }
+    .data               : { __data_start = .;       *(.data)    }
+    .rodata             : { __rodata_start = .;     *(.rodata)  }
+    .bss                : { __bss_start = .;        *(.bss)     }
+    
+    __end = .;
 }

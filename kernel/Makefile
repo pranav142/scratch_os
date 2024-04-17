@@ -17,6 +17,8 @@ C_HEADERS:=$(wildcard *.h)
 ASM_OBJECTS:=$(addprefix $(BUILD_DIR)/, $(ASM_SOURCES:.asm=.o))
 C_OBJECTS:=$(addprefix $(BUILD_DIR)/, $(C_SOURCES:.c=.o))
 DRIVER_OBJECTS:=$(wildcard ../build/drivers/*.o)
+UTIL_OBJECTS:=$(wildcard ../build/utils/*.o)
+
 
 KERNEL_BIN=../build/kernel.bin
 KERNEL_ELF:=$(BUILD_DIR)/kernel.elf
@@ -26,7 +28,7 @@ all: build_dir build
 build_dir: 
 	mkdir -p $(BUILD_DIR)
 
-build: $(C_OBJECTS) $(DRIVER_OBJECTS) $(ASM_OBJECTS)
+build: $(C_OBJECTS) $(DRIVER_OBJECTS) $(ASM_OBJECTS) $(UTIL_OBJECTS)
 	$(LD) $(LDFLAGS) -o $(KERNEL_ELF) $^
 	objcopy -O binary $(KERNEL_ELF) $(KERNEL_BIN)
 

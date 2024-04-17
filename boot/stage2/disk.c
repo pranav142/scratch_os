@@ -1,6 +1,6 @@
 #include "disk.h"
 
-void linear_to_segment_offset(uint32_t linear_address, uint16_t *segment_out,
+void linear_to_segment_offset(uintptr_t linear_address, uint16_t *segment_out,
                               uint16_t *offset_out) {
   *segment_out = linear_address >> 4;
   *offset_out = linear_address & 0x0F;
@@ -15,7 +15,7 @@ void lba_to_chs(uint32_t lba, uint8_t *cylinder_out, uint8_t *head_out,
 }
 
 bool disk_read(uint8_t drive, uint32_t lba, uint16_t num_sectors,
-               uint32_t storage_address, uint8_t heads_per_cylinder,
+               uintptr_t storage_address, uint8_t heads_per_cylinder,
                uint8_t sectors_per_track) {
   const int NUM_TRIES = 3;
   uint8_t cylinder, head, sector;

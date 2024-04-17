@@ -16,5 +16,3 @@ bool __attribute__((cdecl)) x86_get_disk_params(uint8_t drive,
                                                 uint16_t *cylinders_out,
                                                 uint16_t *sectors_out,
                                                 uint16_t *heads_out);
-
-void __attribute__((cdecl)) x86_call_kernel_start();

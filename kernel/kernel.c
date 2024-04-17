@@ -4,9 +4,10 @@
 extern uint8_t __bss_start;
 extern uint8_t __end;
 
-void __attribute__((section(".entry"))) main() {
+void __attribute__((section(".entry"))) start(MemoryInfo mem_info) {
   clear_screen();
 
+  printf("num entries %d\n", mem_info.num_entries);
   printf("Welcome to Scratch OS \n");
   HAL_initialize();
   printf("HAL initialized\n");
