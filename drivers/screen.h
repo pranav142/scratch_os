@@ -1,5 +1,6 @@
 #pragma once
 
+#include "memory.h"
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -20,3 +21,4 @@ void scroll_screen_up();
 void handle_scroll_screen();
 void printf(const char *format, ...);
 void print_number(int num, int radix, bool isSigned);
+void print_char(char character, int col, int row);

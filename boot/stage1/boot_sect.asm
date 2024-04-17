@@ -29,7 +29,7 @@ ebr_system_id:              db 'FAT12  ', 0           ; 8 bytes
 
 start:
     mov [ BOOT_DRIVE ], dl 
-    STAGE2_OFFSET equ 0x1000 
+    STAGE2_OFFSET equ 0x1000
 
     ; Set the stack.
     mov bp , 0x9000 

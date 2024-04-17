@@ -2,7 +2,7 @@ ASM:=nasm
 ASMFLAGS:=-f elf32
 
 CC:=gcc
-CFLAGS:=-ffreestanding -m32 -fno-PIC
+CFLAGS:=-ffreestanding -m32 -fno-PIC -g
 
 LD:=ld
 LDFLAGS:=-m elf_i386 -T stage2.ld -nostdlib

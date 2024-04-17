@@ -9,14 +9,14 @@ endstruc
 
 ; 8000 tells where number of entries goess and addres 8004 is where entries start
 ; whenevr you change address you need to change it in the mem.c 
-mmap_count equ 0x8000
+mmap_count equ 0x500
 do_e820:
 	pushad
 	xor	ebx, ebx
 	xor	bp, bp			
   xor eax, eax
 	mov	edx, 'PAMS'		
-  mov edi, 0x8004
+  mov edi, 0x504
 	mov	eax, 0xe820
 	mov	ecx, 24			
 	int	0x15			

@@ -177,6 +177,7 @@ const char possibleChars[] = "0123456789abcdef";
 
 void print_number(int num, int radix, bool isSigned) {
   char buffer[65];
+  memset(buffer, 0, 64);
   buffer[64] = '\0';
   int pos = 63;
   unsigned int unum = (unsigned int)num;

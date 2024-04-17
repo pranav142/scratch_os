@@ -2,7 +2,7 @@ ASM:=nasm
 ASMFLAGS:=-f elf32
 
 CC:=gcc
-CFLAGS:=-ffreestanding -m32 -nostdlib -fno-PIC
+CFLAGS:=-ffreestanding -m32 -nostdlib -g
 
 BUILD_DIR:=../build/drivers
 ASM_SOURCES:=$(wildcard *.asm)

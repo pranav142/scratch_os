@@ -32,7 +32,7 @@ void print_memory_map() {
 
   for (int i = 0; i < g_MemInfo.num_entries; i++) {
     printf("Entry: %d, Address: %x, Length: %x, Type: %x\n", i,
-           (int)(entry->base_addr), (int)(entry->length), (int)(entry->type));
+           (int)entry->base_addr, (int)(entry->length), (int)(entry->type));
     entry++;
   }
 }
@@ -152,7 +152,7 @@ void map_page(void *physical_address, void *virtual_address) {
 
   PageDirectoryEntry *pd_entry = &pd->entries[PD_INDEX((int)virtual_address)];
   if (!TEST_FLAG(pd_entry, PDE_PRESENT)) {
-    PageTable *page_table = (PageTable *)allocate_block(); 
+    PageTable *page_table = (PageTable *)allocate_block();
     if (!page_table) {
       printf("Not enough memory to allocate page table\n");
       return;
@@ -163,8 +163,8 @@ void map_page(void *physical_address, void *virtual_address) {
     SET_ADDR(pd_entry, (int)page_table);
   }
 
-  PageTable* page_table = (PageTable *)GET_ADDR(pd_entry);
-  PageTableEntry* page = &page_table->entries[PT_INDEX((int)virtual_address)];
+  PageTable *page_table = (PageTable *)GET_ADDR(pd_entry);
+  PageTableEntry *page = &page_table->entries[PT_INDEX((int)virtual_address)];
   SET_ADDR(page, (int)physical_address);
   SET_FLAG(page, PTE_PRESENT);
 }

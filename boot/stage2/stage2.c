@@ -10,8 +10,8 @@
 #define BOOT_SECTOR 0
 #define BOOT_SECTOR_LENGTH 1
 #define DRIVE_ID 0
-#define KERNEL_LOAD_ADDR ((uint8_t *)0x30000)
-#define KERNEL_BUFFER (void *)100000
+#define KERNEL_BUFFER ((uint8_t *)0x30000)
+#define KERNEL_LOAD_ADDR (void *)0x100000
 
 uint32_t get_next_cluster(uint8_t *FAT, uint32_t current_cluster) {
   uint32_t byte_offset = (current_cluster * 3) / 2;
@@ -129,8 +129,6 @@ typedef void (*KernelStart)();
 void __attribute__((section(".text.main"))) main() {
   FAT12_BPB fat12_bpb;
   DISK disk;
-  uint8_t drive_type;
-  uint16_t cylinders, sectors, heads;
   int error;
   disk.id = DRIVE_ID;
 
@@ -149,13 +147,6 @@ void __attribute__((section(".text.main"))) main() {
 
   read_FAT(FAT_BUFFER, &disk, &fat12_bpb);
   read_file(entry, &disk, &fat12_bpb, (uint8_t *)KERNEL_BUFFER, FAT_BUFFER);
-
-  // int i;
-  // int num_bytes_to_check = 807;
-  // for (i = 0; i < num_bytes_to_check / sizeof(char); i++) {
-  //   printf("%c", KERNEL_LOAD_ADDR[i]);
-  // }
-  //
 
   memcpy(KERNEL_LOAD_ADDR, KERNEL_BUFFER, entry->fileSize);
   KernelStart kernelStart = (KernelStart)KERNEL_LOAD_ADDR;

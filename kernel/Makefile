@@ -2,7 +2,7 @@ ASM:=nasm
 ASMFLAGS+=-f elf32
 
 CC:=gcc
-CFLAGS:=-m32 -ffreestanding -nostdlib -fno-PIC -fno-PIE
+CFLAGS:=-m32 -ffreestanding -nostdlib -fno-PIC -fno-PIE -g
 
 LD:=ld
 LDFLAGS:=-m elf_i386 -T kernel.ld
