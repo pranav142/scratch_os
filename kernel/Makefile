@@ -1,16 +1,19 @@
 ASM:=nasm
-ASMFLAGS:=-f elf32
+ASMFLAGS+=-f elf32
 
 CC:=gcc
-CFLAGS:=-ffreestanding -c -m32 -fno-pic -fno-pie -g -fno-stack-protector -fno-builtin
+CFLAGS:=-m32 -ffreestanding -nostdlib -fno-PIC -fno-PIE
 
 LD:=ld
-LDFLAGS:=-m elf_i386 -T kernel.ld -Ttext 0x1000
+LDFLAGS:=-m elf_i386 -T kernel.ld
 
 BUILD_DIR:=../build/kernel
 
 ASM_SOURCES:=$(wildcard *.asm)
+ASM_HEADERS:=$(wildcard *.inc)
 C_SOURCES:=$(wildcard *.c)
+C_HEADERS:=$(wildcard *.h)
+
 ASM_OBJECTS:=$(addprefix $(BUILD_DIR)/, $(ASM_SOURCES:.asm=.o))
 C_OBJECTS:=$(addprefix $(BUILD_DIR)/, $(C_SOURCES:.c=.o))
 DRIVER_OBJECTS:=$(wildcard ../build/drivers/*.o)
@@ -23,15 +26,15 @@ all: build_dir build
 build_dir: 
 	mkdir -p $(BUILD_DIR)
 
-build: $(ASM_OBJECTS) $(C_OBJECTS) $(DRIVER_OBJECTS)
+build: $(C_OBJECTS) $(DRIVER_OBJECTS) $(ASM_OBJECTS)
 	$(LD) $(LDFLAGS) -o $(KERNEL_ELF) $^
 	objcopy -O binary $(KERNEL_ELF) $(KERNEL_BIN)
 
-$(BUILD_DIR)/%.o: %.asm
+$(BUILD_DIR)/%.o: %.asm $(ASM_HEADERS)
 	$(ASM) $(ASMFLAGS) -o $@ $<
 
-$(BUILD_DIR)/%.o: %.c
-	$(CC) $(CFLAGS) -o $@ $<
+$(BUILD_DIR)/%.o: %.c $(C_HEADERS)
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
 	rm -rf $(C_OBJECTS) $(ASM_OBJECTS)

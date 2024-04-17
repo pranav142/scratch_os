@@ -4,8 +4,9 @@ FLOPPY_IMG:=build/floppy.img
 STAGE1_BIN:=build/stage1.bin
 STAGE2_BIN:=build/stage2.bin
 KERNEL_BIN:=build/kernel.bin
+TEST_TEXT:=test.txt
 # This needs to be consistent with reserved sectors entry in FAT BPB and with the number of sectors Stage1 loads
-STAGE2_SECTORS:=19
+STAGE2_SECTORS:=49
 
 all: build_dir build_floppy
 
@@ -36,14 +37,15 @@ kernel:
 drivers:
 	$(MAKE) -C drivers
 
-build_floppy: generate_interrupts stage1 stage2 kernel drivers
+build_floppy: generate_interrupts stage1 drivers stage2 kernel
 	$(DD) if=/dev/zero of=$(FLOPPY_IMG) bs=512 count=2880
 	mkfs.fat -F 12 -n "NBOS" $(FLOPPY_IMG)
 	$(DD) if=$(STAGE1_BIN) of=$(FLOPPY_IMG) bs=512 count=1 conv=notrunc
 	$(DD) if=$(STAGE2_BIN) of=$(FLOPPY_IMG) bs=512 seek=1 count=$(STAGE2_SECTORS) conv=notrunc
 	mcopy -i $(FLOPPY_IMG) $(KERNEL_BIN) "::kernel.bin"
+	mcopy -i $(FLOPPY_IMG) $(TEST_TEXT) "::test.txt"
  
 clean:
-	rm -rf $(BUILD_DIR)
+	rm -rf build
 
 .PHONY: all run qemu_debug debug build_dir generate_interrupts stage1 stage2 kernel drivers build_floppy clean

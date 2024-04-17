@@ -2,7 +2,7 @@ ASM:=nasm
 ASMFLAGS:=-f elf32
 
 CC:=gcc
-CFLAGS:=-ffreestanding -c -m32 -fno-pic -fno-pie -g -fno-stack-protector -fno-builtin
+CFLAGS:=-ffreestanding -m32 -nostdlib -fno-PIC
 
 BUILD_DIR:=../build/drivers
 ASM_SOURCES:=$(wildcard *.asm)
@@ -16,7 +16,7 @@ build_dir:
 	mkdir -p $(BUILD_DIR)
 
 $(BUILD_DIR)/%.o: %.c
-	$(CC) $(CFLAGS) -o $@ $<
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 $(BUILD_DIR)/%.o: %.asm
 	$(ASM) $(ASMFLAGS) -o $@ $<

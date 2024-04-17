@@ -1,12 +1,16 @@
+ENTRY(main)
 OUTPUT_FORMAT(elf32-i386)
-ENTRY(kernel_start)
+phys = 0x00100000;
+
 SECTIONS
- {
-    . = 0x100000;
-    .text : {
-        *(.text.main)
-        *(.text)
-    }
-    .data : {*(.data)}
-    .bss  : {*(.bss)}
- }
+{
+    . = phys;
+
+    .entry              : { __entry_start = .;      *(.entry)   }
+    .text               : { __text_start = .;       *(.text)    }
+    .data               : { __data_start = .;       *(.data)    }
+    .rodata             : { __rodata_start = .;     *(.rodata)  }
+    .bss                : { __bss_start = .;        *(.bss)     }
+    
+    __end = .;
+}

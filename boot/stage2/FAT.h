@@ -27,8 +27,8 @@ typedef struct {
   char filesystemType[8];
 } __attribute__((packed)) FAT12_BPB;
 
-typedef struct { 
-  uint8_t fileName[11];
+typedef struct {
+  char fileName[11];
   uint8_t fileAttributes;
   uint8_t reserved;
   uint8_t creationTimeMs;
@@ -42,6 +42,9 @@ typedef struct {
   uint32_t fileSize;
 } __attribute__((packed)) Directory_Entry;
 
+#define FAT12_ENTRY_SIZE 12
+typedef char FAT_Entry[FAT12_ENTRY_SIZE];
+
 typedef enum {
   READ_ONLY = 0x1,
   HIDDEN = 0x02,
@@ -53,4 +56,3 @@ typedef enum {
 
 #define DIRECTORY_ENTRY_BYTE_SIZE 32
 void printFAT12BPB(const FAT12_BPB *bpb);
-

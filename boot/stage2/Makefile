@@ -2,10 +2,10 @@ ASM:=nasm
 ASMFLAGS:=-f elf32
 
 CC:=gcc
-CFLAGS:=-ffreestanding -c -m32 -fno-pic -fno-pie -g -fno-stack-protector -fno-builtin
+CFLAGS:=-ffreestanding -m32 -fno-PIC
 
 LD:=ld
-LDFLAGS:=-m elf_i386 -T stage2.ld -Ttext 0x1000
+LDFLAGS:=-m elf_i386 -T stage2.ld -nostdlib
 
 BUILD_DIR:=../../build/stage2
 
@@ -31,7 +31,7 @@ $(BUILD_DIR)/%.o: %.asm
 	$(ASM) $(ASMFLAGS) -o $@ $<
 
 $(BUILD_DIR)/%.o: %.c
-	$(CC) $(CFLAGS) -o $@ $<
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
 	rm -rf $(C_OBJECTS) $(ASM_OBJECTS)

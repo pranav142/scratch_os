@@ -60,11 +60,11 @@ x86_disk_reset:
     int 0x13
     
     jc .error
-    mov eax, 1
+    mov eax, 0
     jmp .done
 
 .error:
-    mov eax, 0
+    mov eax, 1
     
 .done:
     EnterProtectedMode
@@ -105,11 +105,11 @@ x86_disk_read:
     int 0x13
     
     jc .error
-    mov eax, 1
+    mov eax, 0
     jmp .done
 
 .error:
-    mov eax, 0
+    mov eax, 1
 
 .done:
     EnterProtectedMode
@@ -122,19 +122,10 @@ x86_disk_read:
     pop ebp
     ret
 
-%macro LinearToSegOffset 4
-
-    mov %3, %1      ; linear address to eax
-    shr %3, 4
-    mov %2, %4
-    mov %3, %1      ; linear address to eax
-    and %3, 0xf
-
-%endmacro
 
 ; bool __attribute__((cdecl)) get_disk_params(uint8_t drive, uint8_t &drive_type_out, uint16_t &cylinders_out, uint16_t &sectors_out, uint16_t &heads_out);
-global get_disk_params
-get_disk_params:
+global x86_get_disk_params
+x86_get_disk_params:
     push ebp
     mov ebp, esp
 
@@ -155,13 +146,13 @@ get_disk_params:
 
     int 0x13
     
-    mov eax, 1
+    mov eax, 0
     jc .error
 
     jmp .done
 
 .error:
-    mov eax, 0
+    mov eax, 1
 
 .done:
     EnterProtectedMode
@@ -198,3 +189,11 @@ get_disk_params:
     mov esp, ebp
     pop ebp
     ret
+
+;void __attribute__((cdecl)) x86_call_kernel_start(uint32_t kernel_addr);
+global x86_call_kernel_start
+x86_call_kernel_start:  
+    cli
+    jmp 0x10000
+
+

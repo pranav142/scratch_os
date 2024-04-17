@@ -30,10 +30,10 @@ bool disk_read(uint8_t drive, uint32_t lba, uint16_t num_sectors,
     error = x86_disk_read(drive, sector, num_sectors, cylinder, head, segment,
                           offset);
     if (!error) {
-      return false;
+      return SUCCESSFUL;
     }
     x86_disk_reset(drive);
   }
 
-  return true;
+  return FAILED;
 }
