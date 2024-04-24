@@ -1,4 +1,5 @@
 #include "stage2.h"
+#include "memdefs.h"
 
 typedef void (*KernelStart)();
 

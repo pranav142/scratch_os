@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../drivers/screen.h"
+#include "../utils/memtools.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -68,6 +69,11 @@ typedef enum {
 } PAGE_DIR_FLAGS;
 
 typedef struct {
+  uintptr_t start_address;
+  size_t length;
+} MemoryRegion;
+
+typedef struct {
   PageDirectoryEntry entries[TABLES_PER_DIRECTORY];
 } PageDirectory;
 
@@ -75,27 +81,19 @@ typedef struct {
   PageTableEntry entries[PAGES_PER_TABLE];
 } PageTable;
 
-#define MEMORY_MAP_COUNT_ADDR 0x500
-#define MEMORY_MAP_ADDR 0x504
-#define MAX_ENTRIES 16
+static uint32_t *physical_memory_bitmap = 0;
+static uint32_t bitmap_size = 0;
 
+#define BITMAP_BLOCKS_PER_BYTE 8
 #define BITMAP_BLOCK_SIZE 4096
-#define MEMORY_START_ADDR 0x100000
-#define TOTAL_USABLE_MEMORY 0x7ee0000
-#define BITMAP_BLOCK_COUNT TOTAL_USABLE_MEMORY / BITMAP_BLOCK_SIZE
-#define BLOCKS_PER_INDEX 16
-#define BITMAP_SIZE BITMAP_BLOCK_COUNT / BLOCKS_PER_INDEX
+#define BLOCKS_PER_INDEX 32
 
-#define BLOCK_TO_ADDR(b) (b * BITMAP_BLOCK_SIZE) + MEMORY_START_ADDR
-#define ADDR_TO_BLOCK(a) (a - MEMORY_START_ADDR) / BITMAP_BLOCK_SIZE
-
-void read_memory_map();
-void print_memory_map();
-void initialize_physical_bit_map();
-void mark_physical_block_used(int block);
-void print_physical_bit_map(int begin, int end);
-void mark_physical_block_unused(int block);
-int find_free_block();
-bool block_is_used(int block);
-void *allocate_block();
-void free_block(void *mem_addr);
+void free_blocks(void *addr, size_t size);
+void initialize_physical_memory_manager(MemoryInfo *mem_info,
+                                        uintptr_t bitmap_addr,
+                                        MemoryRegion *reserved_regions,
+                                        size_t num_reserved_regions);
+void *alloc_blocks(uint32_t size);
+void print_memory_map(MemoryInfo *mem_info);
+void initialize_physical_memory_region(uintptr_t base_addr, uint32_t size);
+void deinitialize_physical_memory_region(uintptr_t base_addr, uint32_t size);
