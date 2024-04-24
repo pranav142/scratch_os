@@ -13,22 +13,22 @@ void print_memory_map(MemoryInfo *mem_info) {
   }
 }
 
-void mark_memory_free(uint32_t bit) {
-  physical_memory_bitmap[bit / BLOCKS_PER_INDEX] &=
-      ~(1 << (bit % BLOCKS_PER_INDEX));
+static void mark_block_free(uint32_t block) {
+  g_physical_memory_bitmap[block / BLOCKS_PER_INDEX] &=
+      ~(1 << (block % BLOCKS_PER_INDEX));
 }
 
-void mark_memory_used(uint32_t bit) {
-  physical_memory_bitmap[bit / BLOCKS_PER_INDEX] |=
-      (1 << (bit % BLOCKS_PER_INDEX));
+static void mark_block_used(uint32_t block) {
+  g_physical_memory_bitmap[block / BLOCKS_PER_INDEX] |=
+      (1 << (block % BLOCKS_PER_INDEX));
 }
 
-bool test_memory_map(uint32_t bit) {
-  return physical_memory_bitmap[bit / BLOCKS_PER_INDEX] &
-         (1 << (bit % BLOCKS_PER_INDEX));
+static bool is_block_used(uint32_t block) {
+  return g_physical_memory_bitmap[block / BLOCKS_PER_INDEX] &
+         (1 << (block % BLOCKS_PER_INDEX));
 }
 
-uint32_t calculate_bitmap_size(MemoryInfo *mem_info) {
+static uint32_t calculate_bitmap_size(MemoryInfo *mem_info) {
   E820MemoryMapEntry *entry = mem_info->entries;
   uint32_t num_entries = mem_info->num_entries;
   uint32_t bitmap_size = 0;
@@ -41,74 +41,75 @@ uint32_t calculate_bitmap_size(MemoryInfo *mem_info) {
   return bitmap_size / BITMAP_BLOCK_SIZE;
 }
 
-int calculate_num_blocks(size_t size) {
+static int calculate_num_blocks(size_t size) {
   return ((size / BITMAP_BLOCK_SIZE) + 1);
 }
 
-void initialize_physical_memory_region(uintptr_t base_addr, uint32_t size) {
+static void mark_physical_memory_region_free(uintptr_t base_addr,
+                                             uint32_t size) {
   int align = base_addr / BITMAP_BLOCK_SIZE;
   int blocks = calculate_num_blocks(size);
 
   for (; blocks > 0; blocks--) {
-    mark_memory_free(align++);
+    mark_block_free(align++);
   }
 
-  mark_memory_used(0);
+  mark_block_used(0);
 }
 
-void deinitialize_physical_memory_region(uintptr_t base_addr, uint32_t size) {
+static void mark_physical_memory_region_used(uintptr_t base_addr,
+                                             uint32_t size) {
   int align = base_addr / BITMAP_BLOCK_SIZE;
   int blocks = calculate_num_blocks(size);
 
   for (; blocks > 0; blocks--) {
-    mark_memory_used(align++);
+    mark_block_used(align++);
   }
 }
 
-uint32_t get_num_free_blocks() {
+static uint32_t get_num_free_blocks() {
   uint32_t free_block_count = 0;
-  for (size_t i = 0; i < bitmap_size; i++) {
-    if (!test_memory_map(i)) {
+  for (size_t i = 0; i < g_bitmap_size; i++) {
+    if (!is_block_used(i)) {
       free_block_count++;
     }
   }
   return free_block_count;
 }
 
-// allocate memory
 void initialize_physical_memory_manager(MemoryInfo *mem_info,
                                         uintptr_t bitmap_addr,
                                         MemoryRegion *reserved_regions,
                                         size_t num_reserved_regions) {
-  bitmap_size = calculate_bitmap_size(mem_info);
-  physical_memory_bitmap = (uint32_t *)bitmap_addr;
+  g_bitmap_size = calculate_bitmap_size(mem_info);
+  g_physical_memory_bitmap = (uint32_t *)bitmap_addr;
 
-  memset(physical_memory_bitmap, 0xff, bitmap_size);
+  memset(g_physical_memory_bitmap, 0xff, g_bitmap_size);
 
   for (size_t i = 0; i < mem_info->num_entries; i++) {
     E820MemoryMapEntry *region = &mem_info->entries[i];
     if (region->type == E820_USABLE) {
-      initialize_physical_memory_region((uintptr_t)region->base_addr,
-                                        region->length);
+      mark_physical_memory_region_free((uintptr_t)region->base_addr,
+                                       region->length);
     } else {
-      deinitialize_physical_memory_region((uintptr_t)region->base_addr,
-                                          region->length);
+      mark_physical_memory_region_used((uintptr_t)region->base_addr,
+                                       region->length);
     }
   }
 
-  deinitialize_physical_memory_region((uintptr_t)bitmap_addr, bitmap_size);
+  mark_physical_memory_region_used((uintptr_t)bitmap_addr, g_bitmap_size);
 
   for (size_t i = 0; i < num_reserved_regions; i++) {
-    deinitialize_physical_memory_region(reserved_regions[i].start_address,
-                                        reserved_regions[i].length);
+    mark_physical_memory_region_used(reserved_regions[i].start_address,
+                                     reserved_regions[i].length);
   }
 }
 
-int find_first_free_sequence(size_t num_blocks) {
+static int find_first_free_sequence(size_t num_blocks) {
   size_t consecutive_free = 0;
 
-  for (size_t i = 0; i < bitmap_size; i++) {
-    if (!test_memory_map(i)) {
+  for (size_t i = 0; i < g_bitmap_size; i++) {
+    if (!is_block_used(i)) {
       consecutive_free++;
       if (consecutive_free == num_blocks) {
         return i - num_blocks + 1;
@@ -122,6 +123,8 @@ int find_first_free_sequence(size_t num_blocks) {
 }
 
 void *alloc_blocks(uint32_t size) {
+  uintptr_t allocated_address;
+
   if (get_num_free_blocks() < size) {
     return NULL;
   }
@@ -131,19 +134,26 @@ void *alloc_blocks(uint32_t size) {
   if (starting_block == -1)
     return NULL;
 
-  deinitialize_physical_memory_region(starting_block * BITMAP_BLOCK_SIZE, size);
+  allocated_address = starting_block * BITMAP_BLOCK_SIZE;
 
-  return (void *)(starting_block * BITMAP_BLOCK_SIZE);
+  mark_physical_memory_region_used(allocated_address, size);
+
+  return (void *)(allocated_address);
 }
 
 void free_blocks(void *addr, size_t size) {
-  initialize_physical_memory_region((uintptr_t)addr, size);
+  mark_physical_memory_region_free((uintptr_t)addr, size);
 }
 
-// free memory
-// get free memory size
-// get used memory size
-//
+size_t get_used_physical_memory() {
+  int used_blocks = g_bitmap_size - get_num_free_blocks();
+  return used_blocks * BITMAP_BLOCK_SIZE;
+}
+
+size_t get_available_physical_memory() {
+  int free_blocks = get_num_free_blocks();
+  return free_blocks * BITMAP_BLOCK_SIZE;
+}
 
 // PageTableEntry *get_page(void *virtual_address) {
 //   PageDirectory *pd = current_page_directory;

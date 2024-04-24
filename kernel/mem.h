@@ -81,19 +81,34 @@ typedef struct {
   PageTableEntry entries[PAGES_PER_TABLE];
 } PageTable;
 
-static uint32_t *physical_memory_bitmap = 0;
-static uint32_t bitmap_size = 0;
+static uint32_t *g_physical_memory_bitmap = 0;
+static uint32_t g_bitmap_size = 0;
 
 #define BITMAP_BLOCKS_PER_BYTE 8
 #define BITMAP_BLOCK_SIZE 4096
 #define BLOCKS_PER_INDEX 32
 
-void free_blocks(void *addr, size_t size);
 void initialize_physical_memory_manager(MemoryInfo *mem_info,
                                         uintptr_t bitmap_addr,
                                         MemoryRegion *reserved_regions,
                                         size_t num_reserved_regions);
 void *alloc_blocks(uint32_t size);
+void free_blocks(void *addr, size_t size);
 void print_memory_map(MemoryInfo *mem_info);
-void initialize_physical_memory_region(uintptr_t base_addr, uint32_t size);
-void deinitialize_physical_memory_region(uintptr_t base_addr, uint32_t size);
+static void mark_block_free(uint32_t block);
+static void mark_block_used(uint32_t block);
+static bool is_block_used(uint32_t block);
+static uint32_t calculate_bitmap_size(MemoryInfo *mem_info);
+static int calculate_num_blocks(size_t size);
+static void mark_physical_memory_region_free(uintptr_t base_addr,
+                                             uint32_t size);
+static void mark_physical_memory_region_used(uintptr_t base_addr,
+                                             uint32_t size);
+static uint32_t get_num_free_blocks();
+void initialize_physical_memory_manager(MemoryInfo *mem_info,
+                                        uintptr_t bitmap_addr,
+                                        MemoryRegion *reserved_regions,
+                                        size_t num_reserved_regions);
+static int find_first_free_sequence(size_t num_blocks);
+size_t get_used_physical_memory();
+size_t get_available_physical_memory();
