@@ -6,4 +6,5 @@
 #include "disk.h"
 #include "mem.h"
 #include "memdefs.h"
+#include "paging.h"
 #include "x86.h"

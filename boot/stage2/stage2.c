@@ -1,5 +1,6 @@
 #include "stage2.h"
 #include "memdefs.h"
+#include "paging.h"
 
 typedef void (*KernelStart)();
 
@@ -51,7 +52,11 @@ void __attribute__((section(".entry"))) start() {
   }
 
   memcpy(KERNEL_LOAD_ADDR, KERNEL_BUFFER, entry->fileSize);
-  KernelStart kernelStart = (KernelStart)KERNEL_LOAD_ADDR;
+  initialize_paging();
+
+  KernelStart kernelStart = (KernelStart)KERNEL_VIRTUAL_ADDR;
+  printf("kernel size: %x\n", entry->fileSize);
+  printf("accessing kernel at addr: %x\n", kernelStart);
   kernelStart(mem_info);
 
 End:
