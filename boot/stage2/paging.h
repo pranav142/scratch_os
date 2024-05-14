@@ -1,8 +1,8 @@
 #pragma once
 
 #include "../../drivers/screen.h"
+#include "../../utils/memdefs.h"
 #include "../../utils/memtools.h"
-#include "memdefs.h"
 #include <stdint.h>
 
 #define PD_INDEX(addr) (addr >> 22)

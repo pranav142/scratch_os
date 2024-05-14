@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../drivers/screen.h"
+#include "../utils/memdefs.h"
 #include "../utils/memtools.h"
 #include <stddef.h>
 #include <stdint.h>
@@ -25,7 +26,7 @@ enum E820MemoryBlockType {
   E820_BAD_MEMORY = 5,
 };
 
-#define PD_INDEX(addr) (addr >> 22)
+#define PD_INDEX(addr) ((addr >> 22))
 #define PT_INDEX(addr) ((addr >> 12) & 0x3FF)
 #define PT_OFFSET(addr) (addr & 0xFFF)
 #define SET_FLAG(entry, flag) (*entry |= flag)
@@ -81,12 +82,11 @@ typedef struct {
   PageTableEntry entries[PAGES_PER_TABLE];
 } PageTable;
 
-static uint32_t *g_physical_memory_bitmap = 0;
-static uint32_t g_bitmap_size = 0;
-
 #define BITMAP_BLOCKS_PER_BYTE 8
 #define BITMAP_BLOCK_SIZE 4096
 #define BLOCKS_PER_INDEX 32
+
+#define SELF_MAP_BASE 0xFFC00000
 
 void initialize_physical_memory_manager(MemoryInfo *mem_info,
                                         uintptr_t bitmap_addr,
@@ -105,10 +105,12 @@ static void mark_physical_memory_region_free(uintptr_t base_addr,
 static void mark_physical_memory_region_used(uintptr_t base_addr,
                                              uint32_t size);
 static uint32_t get_num_free_blocks();
-void initialize_physical_memory_manager(MemoryInfo *mem_info,
-                                        uintptr_t bitmap_addr,
-                                        MemoryRegion *reserved_regions,
-                                        size_t num_reserved_regions);
 static int find_first_free_sequence(size_t num_blocks);
 size_t get_used_physical_memory();
 size_t get_available_physical_memory();
+static int find_first_free_block();
+uintptr_t get_bitmap_addr();
+uint32_t get_bitmap_size();
+void *alloc_block();
+void free_block(void *addr);
+void initialize_virtual_memory_manager();

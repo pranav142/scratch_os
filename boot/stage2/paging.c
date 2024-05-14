@@ -1,5 +1,4 @@
 #include "paging.h"
-#include "memdefs.h"
 
 PageDirectory *g_pageDirectory = (PageDirectory *)PAGING_DIRECTORY_ADDR;
 PageTable *g_identity_map_table = (PageTable *)IDENTITY_MAP_TABLE_ADDR;
@@ -57,14 +56,22 @@ void initialize_paging() {
   SET_ADDR(&identity_map_entry, (uintptr_t)g_identity_map_table);
   SET_FLAG(&identity_map_entry, PDE_PRESENT);
   SET_FLAG(&identity_map_entry, PDE_READ_WRITE);
+  printf("%x\n", identity_map_entry);
   g_pageDirectory->entries[PD_INDEX(0)] = identity_map_entry;
 
   PageDirectoryEntry kernel_map_entry = 0;
   SET_ADDR(&kernel_map_entry, (uintptr_t)g_kernel_map_table);
   SET_FLAG(&kernel_map_entry, PDE_PRESENT);
   SET_FLAG(&kernel_map_entry, PDE_READ_WRITE);
+  printf("%x\n", kernel_map_entry);
   g_pageDirectory->entries[PD_INDEX((uint32_t)KERNEL_VIRTUAL_ADDR)] =
       kernel_map_entry;
+
+  // recursively map the page directory to itself
+  PageDirectoryEntry self_ref_entry = 0;
+  SET_ADDR(&self_ref_entry, (uintptr_t)g_pageDirectory);
+  SET_FLAG(&self_ref_entry, PDE_PRESENT | PDE_READ_WRITE);
+  g_pageDirectory->entries[1023] = self_ref_entry;
 
   enable_paging(g_pageDirectory);
 }

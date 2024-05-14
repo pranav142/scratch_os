@@ -1,6 +1,4 @@
 #include "stage2.h"
-#include "memdefs.h"
-#include "paging.h"
 
 typedef void (*KernelStart)();
 

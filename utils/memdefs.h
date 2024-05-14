@@ -13,6 +13,7 @@
 #define KERNEL_LOAD_ADDR (void *)0x100000
 #define KERNEL_VIRTUAL_ADDR (void *)0xC0000000
 
+// boot loader paging data
 #define IDENTITY_MAP_TABLE_ADDR 0x60000
 #define KERNEL_MAP_TABLE_ADDR 0x62000
 #define PAGING_DIRECTORY_ADDR 0x64000
