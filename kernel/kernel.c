@@ -14,11 +14,14 @@ void __attribute__((section(".entry"))) start(MemoryInfo mem_info) {
 
   printf("Welcome to Scratch OS \n");
 
-  HAL_initialize();
-  print_memory_map(&mem_info);
   initialize_physical_memory_manager(&mem_info, (uintptr_t)&__end,
                                      reserved_regions, num_reserved_regions);
   initialize_virtual_memory_manager();
+
+  HAL_initialize();
+
+  print_memory_map(&mem_info);
+
   for (;;)
     ;
 }

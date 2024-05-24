@@ -26,6 +26,8 @@ enum E820MemoryBlockType {
   E820_BAD_MEMORY = 5,
 };
 
+#define SELF_MAP_BASE 0xFFC00000
+
 #define PD_INDEX(addr) ((addr >> 22))
 #define PT_INDEX(addr) ((addr >> 12) & 0x3FF)
 #define PT_OFFSET(addr) (addr & 0xFFF)
@@ -35,6 +37,8 @@ enum E820MemoryBlockType {
 #define SET_ADDR(entry, addr)                                                  \
   (*entry = (*entry & ~0xFFFFF000) | (addr & 0xFFFFF000))
 #define GET_ADDR(entry) (*entry & 0xFFFFF000)
+#define PT_VIRTUAL_ADDR(page_dir_index)                                        \
+  (SELF_MAP_BASE + (page_dir_index * 0x1000))
 
 #define TABLES_PER_DIRECTORY 1024
 #define PAGES_PER_TABLE 1024
@@ -86,8 +90,6 @@ typedef struct {
 #define BITMAP_BLOCK_SIZE 4096
 #define BLOCKS_PER_INDEX 32
 
-#define SELF_MAP_BASE 0xFFC00000
-
 void initialize_physical_memory_manager(MemoryInfo *mem_info,
                                         uintptr_t bitmap_addr,
                                         MemoryRegion *reserved_regions,
@@ -114,3 +116,8 @@ uint32_t get_bitmap_size();
 void *alloc_block();
 void free_block(void *addr);
 void initialize_virtual_memory_manager();
+bool vmm_map_page(uintptr_t virtual_addr, uintptr_t physical_addr);
+void vmm_unmap_page(uintptr_t virtual_address);
+void vmm_free_page(uintptr_t virtual_address);
+static void enable_paging(PageDirectory *page_dir_pa);
+static bool is_paging();
