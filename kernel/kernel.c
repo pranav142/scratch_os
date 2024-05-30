@@ -22,6 +22,8 @@ void __attribute__((section(".entry"))) start(MemoryInfo mem_info) {
 
   print_memory_map(&mem_info);
 
+  // memory_test();
+
   for (;;)
     ;
 }

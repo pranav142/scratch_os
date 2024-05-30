@@ -1,7 +1,10 @@
 #include "mem.h"
 #include "isr.h"
+#include <assert.h>
+#include <stdint.h>
 
-PageDirectory *kernel_page_dir = (PageDirectory *)0xFFFFF000;
+static PageDirectory *current_page_dir_va = (PageDirectory *)PAGE_DIR_VA;
+static PageDirectory *current_page_dir_pa = 0;
 static uint32_t *g_physical_memory_bitmap = 0;
 static uint32_t g_bitmap_size = 0;
 
@@ -183,8 +186,8 @@ size_t get_available_physical_memory() {
   return free_blocks * BITMAP_BLOCK_SIZE;
 }
 
-static void enable_paging(PageDirectory *page_dir_pa) {
-  PageDirectoryEntry pd_addr = (uintptr_t)page_dir_pa->entries;
+static void enable_paging() {
+  PageDirectoryEntry pd_addr = (uintptr_t)current_page_dir_pa->entries;
 
   __asm__ volatile("mov %0, %%cr3\n"
                    "mov %%cr0, %%eax\n"
@@ -206,7 +209,7 @@ static bool is_paging() {
   return (cr0 & 0x80000000) != 0;
 }
 
-uintptr_t align_to_4kb(uintptr_t addr) { return (addr + 0xFFF) & ~0xFFF; }
+uintptr_t align_to_4kb(uintptr_t addr) { return addr & ~0xFFF; }
 
 static void flush_tlb(void) {
   uint32_t cr3;
@@ -221,11 +224,16 @@ static void invplg(void *m) {
   asm volatile("invlpg (%0)" : : "r"(m) : "memory");
 }
 
+void switch_pdbr(uintptr_t new_pdbr) {
+  asm volatile("mov %0, %%cr3" : : "r"(new_pdbr) : "memory");
+}
+
 bool vmm_map_page(uintptr_t virtual_addr, uintptr_t physical_addr) {
   uint32_t pdi = PD_INDEX(virtual_addr);
   uint32_t pti = PT_INDEX(virtual_addr);
 
-  PageDirectoryEntry *pd_entry = &kernel_page_dir->entries[pdi];
+  // get the pd entry of the virtual address
+  PageDirectoryEntry *pd_entry = &current_page_dir_va->entries[pdi];
   PageTable *page_table_va = (PageTable *)PT_VIRTUAL_ADDR(pdi);
 
   if (!TEST_FLAG(pd_entry, PDE_PRESENT)) {
@@ -233,13 +241,15 @@ bool vmm_map_page(uintptr_t virtual_addr, uintptr_t physical_addr) {
     PageDirectoryEntry new_pd_entry = 0;
     PageTableEntry new_pt_entry = 0;
 
+    // maps the newly created page table into current page directory
     SET_ADDR(&new_pd_entry, (uintptr_t)new_page_table);
     SET_FLAG(&new_pd_entry, PDE_PRESENT | PDE_READ_WRITE);
-    kernel_page_dir->entries[pdi] = new_pd_entry;
+    current_page_dir_va->entries[pdi] = new_pd_entry;
 
     invplg(page_table_va);
     memset(page_table_va, 0, sizeof(PageTable));
 
+    // set virtual address to physical address
     SET_ADDR(&new_pt_entry, physical_addr);
     SET_FLAG(&new_pt_entry, PTE_PRESENT | PTE_READ_WRITE);
     page_table_va->entries[pti] = new_pt_entry;
@@ -257,31 +267,11 @@ bool vmm_map_page(uintptr_t virtual_addr, uintptr_t physical_addr) {
   return true;
 }
 
-// unmaps the page but doesn't deallocate physical memory
-void vmm_unmap_page(uintptr_t virtual_address) {
-  uint32_t pdi = PD_INDEX(virtual_address);
-  uint32_t pti = PT_INDEX(virtual_address);
-
-  PageDirectoryEntry *pd_entry = &kernel_page_dir->entries[pdi];
-  PageTable *page_table_va = (PageTable *)PT_VIRTUAL_ADDR(pdi);
-
-  if (TEST_FLAG(pd_entry, PDE_PRESENT)) {
-    PageTableEntry *pt_entry = &page_table_va->entries[pti];
-    if (TEST_FLAG(pt_entry, PTE_PRESENT)) {
-      void *frame_addr = (void *)GET_ADDR(pt_entry);
-      *pt_entry = 0;
-
-      invplg((void *)virtual_address);
-    }
-  }
-}
-
-// unmaps and de allocates underlying memory
 void vmm_free_page(uintptr_t virtual_address) {
   uint32_t pdi = PD_INDEX(virtual_address);
   uint32_t pti = PT_INDEX(virtual_address);
 
-  PageDirectoryEntry *pd_entry = &kernel_page_dir->entries[pdi];
+  PageDirectoryEntry *pd_entry = &current_page_dir_va->entries[pdi];
   PageTable *page_table_va = (PageTable *)PT_VIRTUAL_ADDR(pdi);
 
   if (TEST_FLAG(pd_entry, PDE_PRESENT)) {
@@ -289,7 +279,6 @@ void vmm_free_page(uintptr_t virtual_address) {
     if (TEST_FLAG(pt_entry, PTE_PRESENT)) {
       void *frame_addr = (void *)GET_ADDR(pt_entry);
       *pt_entry = 0;
-
       invplg((void *)virtual_address);
       free_block(frame_addr);
     }
@@ -308,11 +297,35 @@ PageTable *allocate_page_table(uintptr_t page_table_va) {
   PageTable *page_table_pa = (PageTable *)alloc_block();
   if (!vmm_map_page((uintptr_t)page_table_va, (uintptr_t)page_table_pa))
     return NULL;
-  memset((void *)page_table_va, 0, sizeof(PageDirectory));
+  memset((void *)page_table_va, 0, sizeof(PageTable));
   return page_table_pa;
 }
 
-void page_interrupt_handler(Registers *regs) {}
+void page_fault_handler(Registers *regs) {
+  uintptr_t faulting_address;
+  asm volatile("mov %%cr2, %0" : "=r"(faulting_address));
+
+  uint32_t error_code = regs->error;
+
+  int present = !(error_code & PAGE_PROTECTION_VIOLATION);
+  int rw = error_code & INVALID_WRITE_ACCESS;
+  int us = error_code & PRIVILIGE_VIOLATION;
+  int reserved = error_code & RESERVED_BIT_VIOLATION;
+  int id = error_code & INSTRUCTION_FETCH_VIOLATION;
+
+  printf("KERNEL PANIC\n");
+  printf("Page fault at %x (present: %d, rw: %d, us: %d, reserved: %d, id: "
+         "%d)\n",
+         faulting_address, present, rw, us, reserved, id);
+  kernel_Panic();
+}
+
+void switch_current_page_directory(PageDirectory *page_directory_pa) {
+  if (!page_directory_pa)
+    return;
+  current_page_dir_pa = page_directory_pa;
+  switch_pdbr((uintptr_t)current_page_dir_pa);
+}
 
 void initialize_virtual_memory_manager() {
   PageDirectory *page_directory_va = (PageDirectory *)0x500000;
@@ -345,13 +358,13 @@ void initialize_virtual_memory_manager() {
        i += 1, physical_addr += 4096, virtual_addr += 4096) {
     PageTableEntry page = 0;
     SET_ADDR(&page, physical_addr);
-    SET_FLAG(&page, PTE_PRESENT | PTE_READ_WRITE);
+    SET_FLAG(&page, PTE_PRESENT);
     identity_map_va->entries[PT_INDEX(virtual_addr)] = page;
   }
 
   PageDirectoryEntry identity_map_entry = 0;
   SET_ADDR(&identity_map_entry, (uintptr_t)identity_map_pa);
-  SET_FLAG(&identity_map_entry, PDE_PRESENT | PDE_READ_WRITE);
+  SET_FLAG(&identity_map_entry, PDE_PRESENT);
   page_directory_va->entries[PD_INDEX(0)] = identity_map_entry;
 
   PageDirectoryEntry kernel_map_entry = 0;
@@ -366,11 +379,35 @@ void initialize_virtual_memory_manager() {
   SET_FLAG(&self_ref_entry, PDE_PRESENT | PDE_READ_WRITE);
   page_directory_va->entries[1023] = self_ref_entry;
 
-  // unmap temprary mappings
-  vmm_unmap_page((uintptr_t)page_directory_va);
-  vmm_unmap_page((uintptr_t)kernel_map_va);
-  vmm_unmap_page((uintptr_t)identity_map_va);
-
   flush_tlb();
-  enable_paging(page_directory_pa);
+  switch_current_page_directory(page_directory_pa);
+
+  set_ISRHandler(PAGE_FAULT_INTERRUPT_NUMBER, page_fault_handler);
+}
+
+void memory_test() {
+  uintptr_t START_ADDR = 0x500000;
+  uintptr_t END_ADDR = 0x510000;
+  for (size_t virtual_addr = START_ADDR; virtual_addr < END_ADDR;
+       virtual_addr++) {
+    printf("%x\n", virtual_addr);
+
+    void *phys_addr = alloc_block();
+    if (phys_addr == NULL)
+      printf("ran out of physical memory\n");
+
+    if (!vmm_map_page(virtual_addr, (uintptr_t)phys_addr)) {
+      free_block(phys_addr);
+      continue;
+    }
+    // should be able to dereference without page fault
+    char test_var = *(char *)virtual_addr;
+
+    // due to how the physical allocator work this should work
+    vmm_free_page(virtual_addr);
+    void *new_phys_addr = alloc_block();
+    if (new_phys_addr != phys_addr)
+      printf("failed\n");
+    free_block(new_phys_addr);
+  }
 }

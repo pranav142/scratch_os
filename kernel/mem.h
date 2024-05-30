@@ -1,8 +1,10 @@
 #pragma once
 
+#include "../drivers/ports.h"
 #include "../drivers/screen.h"
 #include "../utils/memdefs.h"
 #include "../utils/memtools.h"
+#include "isr.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -28,20 +30,22 @@ enum E820MemoryBlockType {
 
 #define SELF_MAP_BASE 0xFFC00000
 
-#define PD_INDEX(addr) ((addr >> 22))
+#define PD_INDEX(addr) ((addr >> 22) & 0x3FF)
 #define PT_INDEX(addr) ((addr >> 12) & 0x3FF)
 #define PT_OFFSET(addr) (addr & 0xFFF)
 #define SET_FLAG(entry, flag) (*entry |= flag)
 #define CLEAR_FLAG(entry, flag) (*entry &= ~flag)
 #define TEST_FLAG(entry, flag) (*entry & flag)
 #define SET_ADDR(entry, addr)                                                  \
-  (*entry = (*entry & ~0xFFFFF000) | (addr & 0xFFFFF000))
+  (*(entry) = (*(entry) & ~0xFFFFF000) | ((addr) & 0xFFFFF000))
 #define GET_ADDR(entry) (*entry & 0xFFFFF000)
 #define PT_VIRTUAL_ADDR(page_dir_index)                                        \
   (SELF_MAP_BASE + (page_dir_index * 0x1000))
 
 #define TABLES_PER_DIRECTORY 1024
 #define PAGES_PER_TABLE 1024
+
+#define PAGE_FAULT_INTERRUPT_NUMBER 0xE
 
 typedef uint32_t PageTableEntry;
 typedef uint32_t PageDirectoryEntry;
@@ -72,6 +76,17 @@ typedef enum {
   PDE_PAT = 0x2000,       // 4MB entry only
   PDE_FRAME = 0xFFFFF000, // bits 12+ first 20 bits of table address
 } PAGE_DIR_FLAGS;
+
+typedef enum {
+  PAGE_PROTECTION_VIOLATION = 0x01, // not set -> not present page
+  INVALID_WRITE_ACCESS = 0x02,      // not set -> invalid read access
+  PRIVILIGE_VIOLATION = 0x4,
+  RESERVED_BIT_VIOLATION = 0x8,
+  INSTRUCTION_FETCH_VIOLATION = 0x10,
+  PROTECTION_KEY_VIOLATION = 0x20,
+  SHADOW_STACK_ACCESS = 0x30,
+  SOFTWARE_GUARD_VIOLATION = 0x40,
+} PAGE_FAULT_ERRORS;
 
 typedef struct {
   uintptr_t start_address;
@@ -119,5 +134,6 @@ void initialize_virtual_memory_manager();
 bool vmm_map_page(uintptr_t virtual_addr, uintptr_t physical_addr);
 void vmm_unmap_page(uintptr_t virtual_address);
 void vmm_free_page(uintptr_t virtual_address);
-static void enable_paging(PageDirectory *page_dir_pa);
+static void enable_paging();
 static bool is_paging();
+void memory_test();
