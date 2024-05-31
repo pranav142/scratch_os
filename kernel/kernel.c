@@ -1,5 +1,4 @@
 #include "kernel.h"
-#include "mem.h"
 
 extern uint8_t __end;
 
@@ -22,7 +21,7 @@ void __attribute__((section(".entry"))) start(MemoryInfo mem_info) {
 
   print_memory_map(&mem_info);
 
-  // memory_test();
+  memory_test();
 
   for (;;)
     ;

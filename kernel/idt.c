@@ -1,41 +1,26 @@
 #include "idt.h"
 
-typedef struct {
-  uint16_t OffsetLow;
-  uint16_t SegmentSelector;
-  uint8_t Unused;
-  uint8_t Flags;
-  uint16_t OffsetHigh;
-} __attribute__((packed)) IDTEntry;
+IDTEntry g_IDT[TOTAL_NUMBER_INTERRUPTS];
 
-typedef struct {
-  uint16_t Limit;
-  IDTEntry *Ptr;
-} __attribute__((packed)) IDTDescriptor;
+IDTDescriptor g_IDT_descriptor = {sizeof(g_IDT) - 1, g_IDT};
 
-IDTEntry g_IDT[256];
+extern void __attribute__((cdecl)) IDT_Load(IDTDescriptor *idtDescriptor);
 
-IDTDescriptor g_IDTDescriptor = {sizeof(g_IDT) - 1, g_IDT};
-
-void __attribute__((cdecl)) IDT_Load(IDTDescriptor *idtDescriptor);
-
-void IDT_SetGate(int interrupt, void *ISR_Addr, uint16_t segment_selector,
-                 uint8_t flags) {
-  g_IDT[interrupt].OffsetLow = ((uint32_t)ISR_Addr) & 0xFFFF;
-  g_IDT[interrupt].SegmentSelector = segment_selector;
-  g_IDT[interrupt].Unused = 0;
-  g_IDT[interrupt].Flags = flags;
-  g_IDT[interrupt].OffsetHigh = (((uint32_t)ISR_Addr) >> 16) & 0xFFFF;
+void IDT_set_gate(int interrupt, void *ISR_addr, uint16_t segment_selector,
+                  uint8_t flags) {
+  g_IDT[interrupt].offset_low = ((uintptr_t)ISR_addr) & 0xFFFF;
+  g_IDT[interrupt].segment_selector = segment_selector;
+  g_IDT[interrupt].unused = 0;
+  g_IDT[interrupt].flags = flags;
+  g_IDT[interrupt].offset_high = (((uintptr_t)ISR_addr) >> 16) & 0xFFFF;
 }
 
-void IDT_enableGate(int interrupt) {
-  // sets present flag to 1
-  g_IDT[interrupt].Flags = g_IDT[interrupt].Flags | IDT_FLAG_PRESENT;
+void IDT_enable_gate(int interrupt) {
+  g_IDT[interrupt].flags = g_IDT[interrupt].flags | IDT_FLAG_PRESENT;
 }
 
-void IDT_disableGate(int interrupt) {
-  // Sets present flag to 0
-  g_IDT[interrupt].Flags = g_IDT[interrupt].Flags & ~IDT_FLAG_PRESENT;
+void IDT_disable_gate(int interrupt) {
+  g_IDT[interrupt].flags = g_IDT[interrupt].flags & ~IDT_FLAG_PRESENT;
 }
 
-void IDT_initialize() { IDT_Load(&g_IDTDescriptor); }
+void IDT_initialize() { IDT_Load(&g_IDT_descriptor); }

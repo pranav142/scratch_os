@@ -22,9 +22,9 @@ def define_c_initialization_interrupts(output_file):
         for i in range(256):
             file.write(f"extern void __attribute__((cdecl)) ISR{i}();\n")
         file.write("\n")
-        file.write("void ISR_InitializeGates() {\n")
+        file.write("void ISR_initialize_gates() {\n")
         for i in range(256):
-            file.write(f"\tIDT_SetGate({i}, ISR{i}, CODE_SEGMENT, IDT_FLAG_GATE_32_INT | IDT_FLAG_RING_0);\n")
+            file.write(f"\tIDT_set_gate({i}, ISR{i}, CODE_SEGMENT, IDT_FLAG_GATE_32_INT | IDT_FLAG_RING_0);\n")
         file.write("}")
     
 def main():

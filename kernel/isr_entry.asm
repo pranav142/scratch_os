@@ -1,6 +1,6 @@
 [bits 32]
 
-extern ISR_Common_Handler
+extern ISR_common_handler
 
 %macro ISR_NOERRORCODE 1
 
@@ -37,7 +37,7 @@ isr_common:
   mov gs, ax
   
   push esp            ; pass pointer to stack to C, so we can access all the pushed information
-  call ISR_Common_Handler    ; ISR handler can use pointer stack esp to get values on the stack and use that info to handler values
+  call ISR_common_handler    ; ISR handler can use pointer stack esp to get values on the stack and use that info to handler values
   add esp, 4          ; this basically pushes the stack back up so the pointer to stack is removed from stack
 
   pop eax             ; restore old segment

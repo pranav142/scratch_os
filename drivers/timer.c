@@ -15,7 +15,7 @@ void timer_pit_init(uint32_t divisor) {
 
 void timer_initialize() {
   ticks = 0;
-  set_IRQHandler(TIMER_IRQ, timer_handler);
+  set_IRQ_handler(TIMER_IRQ, timer_handler);
   uint32_t divisor = PIT_FREQ / TIMER_FREQ;
   timer_pit_init(divisor);
 }

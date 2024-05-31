@@ -17,6 +17,3 @@
 #define IDENTITY_MAP_TABLE_ADDR 0x60000
 #define KERNEL_MAP_TABLE_ADDR 0x62000
 #define PAGING_DIRECTORY_ADDR 0x64000
-
-// once paging is enabled current page directory virtual addr is here
-#define PAGE_DIR_VA 0xFFFFF000

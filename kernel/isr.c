@@ -1,11 +1,8 @@
 #include "isr.h"
-#include "../drivers/ports.h"
-#include "../drivers/screen.h"
-#include "idt.h"
 
-ISRHandler g_ISRHandlers[256];
+ISRHandler g_ISR_handlers[TOTAL_NUMBER_INTERRUPTS];
 
-static const char *const g_Exceptions[] = {"Divide by zero error",
+static const char *const g_exceptions[] = {"Divide by zero error",
                                            "Debug",
                                            "Non-maskable Interrupt",
                                            "Breakpoint",
@@ -38,24 +35,24 @@ static const char *const g_Exceptions[] = {"Divide by zero error",
                                            "Security Exception",
                                            ""};
 
-void set_ISRHandler(int interrupt, ISRHandler handler) {
-  g_ISRHandlers[interrupt] = handler;
-  IDT_enableGate(interrupt);
+void set_ISR_handler(int interrupt, ISRHandler handler) {
+  g_ISR_handlers[interrupt] = handler;
+  IDT_enable_gate(interrupt);
 }
 
-void print_handler_debug_info(Registers *regs) {
+static void print_handler_debug_info(Registers *regs) {
   printf("Unhandled exception %d %s\n", regs->interrupt,
-         g_Exceptions[regs->interrupt]);
+         g_exceptions[regs->interrupt]);
   printf("  esp=%x  ebp=%x  eip=%x  eflags=%x  cs=%x  ds=%x  ss=%x\n",
          regs->esp, regs->ebp, regs->eip, regs->eflags, regs->cs, regs->ds,
          regs->ss);
   printf("  interrupt=%x  errorcode=%x\n", regs->interrupt, regs->error);
 }
 
-void __attribute__((cdecl)) ISR_Common_Handler(Registers *regs) {
-  if (g_ISRHandlers[regs->interrupt] != NULL) {
-    g_ISRHandlers[regs->interrupt](regs);
-  } else if (regs->interrupt >= 32) {
+void __attribute__((cdecl)) ISR_common_handler(Registers *regs) {
+  if (g_ISR_handlers[regs->interrupt] != NULL) {
+    g_ISR_handlers[regs->interrupt](regs);
+  } else if (regs->interrupt >= TOTAL_TRAP_INTERRUPTS) {
     printf("Unhandled interrupt %d!\n", regs->interrupt);
   } else {
     print_handler_debug_info(regs);
@@ -64,12 +61,12 @@ void __attribute__((cdecl)) ISR_Common_Handler(Registers *regs) {
   }
 }
 
-void ISR_InitializeGates();
+extern void ISR_initialize_gates();
 
 void ISR_initialize() {
-  ISR_InitializeGates();
-  for (int i = 0; i < 256; i++) {
-    IDT_enableGate(i);
+  ISR_initialize_gates();
+  for (size_t i = 0; i < TOTAL_NUMBER_INTERRUPTS; i++) {
+    IDT_enable_gate(i);
   }
-  IDT_disableGate(0x80);
+  IDT_disable_gate(0x80);
 }
