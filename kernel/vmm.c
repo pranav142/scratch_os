@@ -80,7 +80,7 @@ bool vmm_map_address(uintptr_t virtual_addr, uintptr_t physical_addr) {
 
   PageTableEntry *pt_entry = &page_table_va->entries[pti];
   if (TEST_FLAG(pt_entry, PTE_PRESENT)) {
-    printf("tried to map a already mapped page\n");
+    // printf("tried to map a already mapped page\n");
     return false;
   }
 

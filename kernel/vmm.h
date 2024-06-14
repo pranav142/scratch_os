@@ -20,6 +20,8 @@
 #define PAGES_PER_TABLE 1024
 #define PAGE_FAULT_INTERRUPT_NUMBER 0xE
 
+#define PAGE_SIZE 4096
+
 typedef uint32_t PageTableEntry;
 typedef uint32_t PageDirectoryEntry;
 
