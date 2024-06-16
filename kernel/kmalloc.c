@@ -3,17 +3,20 @@
 #include "../utils/memdefs.h"
 #include "pmm.h"
 #include "vmm.h"
+#include <stdint.h>
 
 #define INITIAL_KERNEL_HEAP_SIZE 0x10000
 #define MAX_KERNEL_HEAP_SIZE (KERNEL_HEAP_END - KERNEL_HEAP_START)
+#define CANARY_VALUE 0x69420691
 
-// smallest amount of memory a block can represent
+// smallest amount of memory a block can represent (bytes)
 #define MIN_MEM_BLOCK_SIZE 64
 
-typedef struct {
+typedef struct Block {
   struct Block *next;
   size_t size;
   bool free;
+  uint32_t canary; // used to make sure block is valid
 } Block;
 
 #define META_BLOCK_SIZE sizeof(Block)
@@ -38,6 +41,7 @@ void initialize_kernel_heap() {
   g_memory_base->free = true;
   g_memory_base->size = INITIAL_KERNEL_HEAP_SIZE;
   g_memory_base->next = NULL;
+  g_memory_base->canary = CANARY_VALUE;
 
   end_of_heap = (void *)((uintptr_t)g_memory_base + g_memory_base->size);
   printf("end of heap: %x\n", end_of_heap);
@@ -91,7 +95,16 @@ Block *request_space(size_t size) {
   block->size = size;
   block->next = NULL;
   block->free = false;
+  block->canary = CANARY_VALUE;
   return block;
+}
+
+Block *get_last_kernel_block() {
+  Block *current = g_memory_base;
+  while (current->next) {
+    current = current->next;
+  }
+  return current;
 }
 
 void *kmalloc(size_t nbytes) {
@@ -105,31 +118,60 @@ void *kmalloc(size_t nbytes) {
     if (!block) {
       return NULL;
     }
+
+    Block *last_block = get_last_kernel_block();
+    last_block->next = block;
   } else if (block->size > (nbytes + META_BLOCK_SIZE + MIN_MEM_BLOCK_SIZE)) {
     size_t original_size = block->size;
     block->size = nbytes;
     Block *new_block =
-        (Block *)((uintptr_t *)block + block->size + META_BLOCK_SIZE);
+        (Block *)((uintptr_t)block + block->size + META_BLOCK_SIZE);
 
     new_block->free = true;
     new_block->next = block->next;
     new_block->size = original_size - nbytes - META_BLOCK_SIZE;
+    new_block->canary = CANARY_VALUE;
 
-    block->next = (struct Block *)new_block;
+    block->next = (Block *)new_block;
   }
 
   block->free = false;
   return (void *)((uintptr_t)block + META_BLOCK_SIZE);
 }
 
+bool is_valid_block(Block *block) { return block->canary == CANARY_VALUE; }
+
 void kfree(void *ptr) {
-  if (!ptr) {
+  if (!ptr || KERNEL_HEAP_END <= (uintptr_t)ptr ||
+      (uintptr_t)ptr <= KERNEL_HEAP_START) {
     return;
   }
 
   Block *block = (Block *)((uintptr_t)ptr - META_BLOCK_SIZE);
+  if (!is_valid_block(block)) {
+    printf("Invalid Free Pointer or Heap Memory Corruption!\n");
+    kernel_Panic();
+    return;
+  }
+
   block->free = true;
-  // add coallescing blocks
+
+  Block *next_block = block->next;
+  if (next_block && next_block->free) {
+    block->next = next_block->next;
+    block->size += next_block->size + META_BLOCK_SIZE;
+  }
+}
+
+static void print_heap_memory() {
+  Block *current = g_memory_base;
+  uint32_t count = 1;
+  while (current) {
+    printf("Node: %d, size: %x, free: %d\n", count, current->size,
+           current->free);
+    current = current->next;
+    count++;
+  }
 }
 
 void kernel_memory_test() {
@@ -144,16 +186,26 @@ void kernel_memory_test() {
   printf("%x\n", x);
 
   // this currently causes a page fault
-  //  x = kmalloc(50000);
-
-  Block *current = g_memory_base;
-  uint32_t count = 1;
-  while (current) {
-    printf("Node: %d, size: %x, free: %d\n", count, current->size,
-           current->free);
-    current = current->next;
-    count++;
+  x = kmalloc(0x50000);
+  x = kmalloc(0x50000);
+  void *_x = x;
+  for (size_t i = 0; i < 0x50000; i++) {
+    *(char *)_x = 'A';
+    _x++;
   }
+  printf("%d", *(uint32_t *)x);
+
+  void *y = kmalloc(0x50000);
+  kfree(y);
+  kfree(x);
+  // see if coallescing worked
+  print_heap_memory();
+
+  x = kmalloc(0x50000);
+  // x = kmalloc(0x50000);
+
+  print_heap_memory();
+
   // uintptr_t prev_end_of_heap = (uintptr_t)end_of_heap;
   // p = request_space(nbytes);
   // if ((uintptr_t)p == prev_end_of_heap && p->size == nbytes) {
