@@ -1,25 +1,4 @@
 #include "kmalloc.h"
-#include "../drivers/screen.h"
-#include "../utils/memdefs.h"
-#include "pmm.h"
-#include "vmm.h"
-#include <stdint.h>
-
-#define INITIAL_KERNEL_HEAP_SIZE 0x10000
-#define MAX_KERNEL_HEAP_SIZE (KERNEL_HEAP_END - KERNEL_HEAP_START)
-#define CANARY_VALUE 0x69420691
-
-// smallest amount of memory a block can represent (bytes)
-#define MIN_MEM_BLOCK_SIZE 64
-
-typedef struct Block {
-  struct Block *next;
-  size_t size;
-  bool free;
-  uint32_t canary; // used to make sure block is valid
-} Block;
-
-#define META_BLOCK_SIZE sizeof(Block)
 
 static Block *g_memory_base = NULL;
 static void *end_of_heap = NULL;
@@ -47,7 +26,7 @@ void initialize_kernel_heap() {
   printf("end of heap: %x\n", end_of_heap);
 }
 
-Block *find_first_free_kernel_block(size_t size) {
+static Block *find_first_free_kernel_block(size_t size) {
   Block *current = g_memory_base;
   while (current && !(current->free && current->size >= size)) {
     current = (Block *)current->next;
@@ -55,7 +34,7 @@ Block *find_first_free_kernel_block(size_t size) {
   return current;
 }
 
-void *ksbrk(size_t nbytes) {
+static void *ksbrk(size_t nbytes) {
   if (((uintptr_t)end_of_heap + nbytes) > KERNEL_HEAP_END)
     return NULL;
 
@@ -79,7 +58,7 @@ void *ksbrk(size_t nbytes) {
   return prev_heap_end;
 }
 
-Block *request_space(size_t size) {
+static Block *request_space(size_t size) {
   Block *block;
   block = (Block *)ksbrk(0);
   void *request = ksbrk(size + META_BLOCK_SIZE);
@@ -99,7 +78,7 @@ Block *request_space(size_t size) {
   return block;
 }
 
-Block *get_last_kernel_block() {
+static Block *get_last_kernel_block() {
   Block *current = g_memory_base;
   while (current->next) {
     current = current->next;
@@ -139,7 +118,9 @@ void *kmalloc(size_t nbytes) {
   return (void *)((uintptr_t)block + META_BLOCK_SIZE);
 }
 
-bool is_valid_block(Block *block) { return block->canary == CANARY_VALUE; }
+static inline bool is_valid_block(Block *block) {
+  return block->canary == CANARY_VALUE;
+}
 
 void kfree(void *ptr) {
   if (!ptr || KERNEL_HEAP_END <= (uintptr_t)ptr ||
@@ -172,57 +153,94 @@ static void print_heap_memory() {
     current = current->next;
     count++;
   }
+  printf("\n");
 }
 
-void kernel_memory_test() {
+void helper_kernel_test() {
+  uint32_t nbytes = 0x1000;
   Block *p = find_first_free_kernel_block(100);
   if ((uintptr_t)p == KERNEL_HEAP_START) {
     printf("success finding kernel block\n");
   }
-
-  uint32_t nbytes = 0x1000;
-  void *x = kmalloc(nbytes);
-  printf("size of metadata: %x\n", META_BLOCK_SIZE);
-  printf("%x\n", x);
-
-  // this currently causes a page fault
-  x = kmalloc(0x50000);
-  x = kmalloc(0x50000);
-  void *_x = x;
-  for (size_t i = 0; i < 0x50000; i++) {
-    *(char *)_x = 'A';
-    _x++;
+  uintptr_t prev_end_of_heap = (uintptr_t)end_of_heap;
+  p = request_space(nbytes);
+  if ((uintptr_t)p == prev_end_of_heap && p->size == nbytes) {
+    printf("success requesting space\n");
   }
-  printf("%d", *(uint32_t *)x);
 
-  void *y = kmalloc(0x50000);
-  kfree(y);
+  void *x = ksbrk(nbytes);
+  printf("ksbrk return value %x, end of heap: %x\n", x, end_of_heap);
+  if ((uintptr_t)end_of_heap == ((uintptr_t)x + nbytes)) {
+    printf("success using ksbrk\n");
+  }
+
+  x = ksbrk(nbytes);
+  printf("ksbrk return value %x, end of heap: %x\n", x, end_of_heap);
+  if ((uintptr_t)end_of_heap == ((uintptr_t)x + nbytes)) {
+    printf("success using ksbrk\n");
+  }
+}
+
+void kernel_memory_test() {
+  uint32_t nbytes = 0x1000;
+  void *p1 = kmalloc(nbytes);
+  printf("size of metadata: %x\n", META_BLOCK_SIZE);
+  printf("%x\n", p1);
+
+  void *p2 = kmalloc(0x50000);
+  void *p3 = kmalloc(0x50000);
+  void *p4 = kmalloc(0x50000);
+  kfree(p4);
+  kfree(p1);
+  print_heap_memory();
+
+  void *x = kmalloc(0x50000);
+  if (x != NULL) {
+    memset(x, 'A', 0x50000);
+    for (size_t i = 0x45000; i < 0x45010; i++) {
+      printf("%c", ((char *)x)[i]);
+    }
+    printf("Success: setting allocated memory large\n");
+  }
   kfree(x);
-  // see if coallescing worked
+
+  x = kmalloc(0x500);
+  if (x != NULL) {
+    memset(x, 'b', 0x500);
+    for (size_t i = 0x450; i < 0x460; i++) {
+      printf("%c", ((char *)x)[i]);
+    }
+    printf("success: setting allocated memory small\n");
+  }
   print_heap_memory();
 
-  x = kmalloc(0x50000);
-  // x = kmalloc(0x50000);
-
+  kfree(x);
+  kfree(p3);
+  kfree(p2);
   print_heap_memory();
 
-  // uintptr_t prev_end_of_heap = (uintptr_t)end_of_heap;
-  // p = request_space(nbytes);
-  // if ((uintptr_t)p == prev_end_of_heap && p->size == nbytes) {
-  //   printf("success requesting space\n");
-  // }
+  for (size_t i = 0; i < 100; i++) {
+    void *ptr = kmalloc(0x5000);
+    memset(ptr, 'A' + i, 0x500);
+    if (!ptr) {
+      printf("failed\n");
+      return;
+    }
+    kfree(ptr);
+  }
 
-  // void *x = ksbrk(nbytes);
-  // // printf("ksbrk return value %x, end of heap: %x\n", x,
-  // end_of_heap); if ((uintptr_t)end_of_heap == ((uintptr_t)x +
-  // nbytes)) {
-  //   printf("success using ksbrk\n");
-  // }
+  print_heap_memory();
+  printf("success: stress test\n");
 
-  // x = ksbrk(nbytes);
-  // // printf("ksbrk return value %x, end of heap: %x\n", x,
-  // end_of_heap); if ((uintptr_t)end_of_heap == ((uintptr_t)x +
-  // nbytes)) {
-  //   printf("success using ksbrk\n");
-  // }
+  void *ptr;
+  for (size_t i = 0; i < 500; i++) {
+    ptr = kmalloc(0x100000);
+    memset(ptr, 'A' + i, 0x500);
+  }
+  if (!ptr) {
+    printf("success: allocating all memory\n");
+  } else {
+    printf("Failed allocating all memory");
+    return;
+  }
 }
