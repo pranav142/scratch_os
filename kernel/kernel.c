@@ -1,5 +1,5 @@
 #include "kernel.h"
-#include "kmalloc.h"
+#include "vmm.h"
 
 extern uint8_t __end;
 
@@ -16,7 +16,7 @@ void __attribute__((section(".entry"))) start(MemoryInfo mem_info) {
 
   initialize_physical_memory_manager(&mem_info, (uintptr_t)&__end,
                                      reserved_regions, num_reserved_regions);
-  initialize_virtual_memory_manager();
+  initialize_paging();
 
   HAL_initialize();
 
@@ -25,8 +25,10 @@ void __attribute__((section(".entry"))) start(MemoryInfo mem_info) {
   // memory_test();
   initialize_kernel_heap();
 
-  kernel_memory_test();
+  // kernel_memory_test();
 
+  initialize_vmm();
+  vmm_test();
   for (;;)
     ;
 }

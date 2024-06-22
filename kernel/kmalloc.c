@@ -8,7 +8,7 @@ void initialize_kernel_heap() {
        virtual_addr <= (KERNEL_HEAP_START + INITIAL_KERNEL_HEAP_SIZE);
        virtual_addr += PAGE_SIZE) {
     void *physical_addr = alloc_block();
-    if (!vmm_map_address(virtual_addr, (uintptr_t)physical_addr)) {
+    if (!map_address(virtual_addr, (uintptr_t)physical_addr, PTE_READ_WRITE)) {
       printf("failed to map virtual address: %x to %x in kernel heap "
              "initialization",
              virtual_addr, physical_addr);
@@ -23,7 +23,6 @@ void initialize_kernel_heap() {
   g_memory_base->canary = CANARY_VALUE;
 
   end_of_heap = (void *)((uintptr_t)g_memory_base + g_memory_base->size);
-  printf("end of heap: %x\n", end_of_heap);
 }
 
 static Block *find_first_free_kernel_block(size_t size) {
@@ -34,6 +33,7 @@ static Block *find_first_free_kernel_block(size_t size) {
   return current;
 }
 
+// TODO: come up with faster method for mapping
 static void *ksbrk(size_t nbytes) {
   if (((uintptr_t)end_of_heap + nbytes) > KERNEL_HEAP_END)
     return NULL;
@@ -41,15 +41,14 @@ static void *ksbrk(size_t nbytes) {
   void *prev_heap_end = end_of_heap;
   void *new_heap_end = (void *)((uintptr_t)end_of_heap + nbytes);
 
-  // map new heap region
-  for (uintptr_t p = (uintptr_t)prev_heap_end; p <= (uintptr_t)new_heap_end;
-       p += PAGE_SIZE) {
+  for (uintptr_t virtual_addr = (uintptr_t)prev_heap_end;
+       virtual_addr <= (uintptr_t)new_heap_end; virtual_addr++) {
     void *physical_addr = alloc_block();
     if (!physical_addr) {
       return NULL;
     }
 
-    if (!vmm_map_address(p, (uintptr_t)physical_addr)) {
+    if (!map_address(virtual_addr, (uintptr_t)physical_addr, PTE_READ_WRITE)) {
       free_block(physical_addr);
     }
   }
@@ -122,6 +121,7 @@ static inline bool is_valid_block(Block *block) {
   return block->canary == CANARY_VALUE;
 }
 
+// TODO: fix a bug wih freeing memory
 void kfree(void *ptr) {
   if (!ptr || KERNEL_HEAP_END <= (uintptr_t)ptr ||
       (uintptr_t)ptr <= KERNEL_HEAP_START) {
@@ -220,7 +220,7 @@ void kernel_memory_test() {
   print_heap_memory();
 
   for (size_t i = 0; i < 100; i++) {
-    void *ptr = kmalloc(0x5000);
+    void *ptr = kmalloc(0x5000 + i * 5);
     memset(ptr, 'A' + i, 0x500);
     if (!ptr) {
       printf("failed\n");

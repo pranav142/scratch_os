@@ -5,8 +5,8 @@
 
 #include "../drivers/screen.h"
 #include "../utils/memdefs.h"
+#include "paging.h"
 #include "pmm.h"
-#include "vmm.h"
 
 typedef struct Block {
   struct Block *next;
