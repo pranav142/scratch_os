@@ -1,0 +1,61 @@
+#include "FDC.h"
+#include "../kernel/irq.h"
+#include "ports.h"
+#include "screen.h"
+#include <stdbool.h>
+#include <stdint.h>
+
+#define VALID_FDC_VERSION 0x90
+
+#define FDC_DOR_RESET 0x00
+#define FDC_DOR_ENABLE 0x0C
+
+enum FloppyRegisters {
+  STATUS_REGISTER_A = 0x3F0,
+  STATUS_REGISTER_B = 0x3F1,
+  DIGITAL_OUTPUT_REGISTER = 0x3F2,
+  TAPE_DRIVE_REGISTER = 0x3F3,
+  MAIN_STATUS_REGISTER = 0x3F4,
+  DATARATE_SELECT_REGISTER = 0x3F4,
+  DATA_FIFO = 0x3F5,
+  DIGITAL_INPUT_REGISTER = 0x3F7,
+  CONFIGURATION_CONTROL_REGISTER = 0x3F7
+};
+
+volatile static bool g_recieved_irq = false;
+
+void send_fdc_command(FloppyCommands command) {
+  while (!(port_byte_in(MAIN_STATUS_REGISTER) & 0x80))
+    ;
+  port_byte_out(DATA_FIFO, command);
+}
+
+uint8_t read_fdc_data() {
+  while (!(port_byte_in(MAIN_STATUS_REGISTER) & 0x80))
+    ;
+  return port_byte_in(DATA_FIFO);
+}
+
+uint8_t get_fdc_version() {
+  send_fdc_command(VERSION);
+  return read_fdc_data();
+}
+
+void reset_fdc() {
+  port_byte_out(DIGITAL_OUTPUT_REGISTER, FDC_DOR_RESET);
+  port_byte_out(DIGITAL_OUTPUT_REGISTER, FDC_DOR_ENABLE);
+}
+
+void set_fdc_data_rate() {}
+
+void fdc_handler() { g_recieved_irq = true; }
+
+void fdc_test() {
+  set_IRQ_handler(0x6, fdc_handler);
+  reset_fdc();
+  uint8_t version = get_fdc_version();
+  printf("Version: %x\n", version);
+  if (version != VALID_FDC_VERSION) {
+    printf("Invalid Floppy Disk Controller Version\n");
+  }
+}

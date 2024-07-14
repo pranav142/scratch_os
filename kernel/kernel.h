@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../drivers/FDC.h"
 #include "../drivers/ports.h"
 #include "../drivers/screen.h"
 #include "e820_mem.h"

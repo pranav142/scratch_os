@@ -28,7 +28,10 @@ void __attribute__((section(".entry"))) start(MemoryInfo mem_info) {
   // kernel_memory_test();
 
   initialize_vmm();
-  vmm_test();
+
+  // vmm_test();
+
+  fdc_test();
   for (;;)
     ;
 }

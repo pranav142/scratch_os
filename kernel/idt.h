@@ -30,7 +30,6 @@ typedef struct {
 } __attribute__((packed)) IDTDescriptor;
 
 #define TOTAL_NUMBER_INTERRUPTS 256
-
 #define CODE_SEGMENT 0x08
 #define DATA_SEGMENT 0x10
 

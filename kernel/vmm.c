@@ -160,7 +160,7 @@ static size_t get_total_size() {
 void vmm_test() {
   print_free_list();
 
-  const size_t nbytes = 0x504;
+  const size_t nbytes = 0x2004;
   for (size_t i = 0; i < 100; i++) {
     void *p = vmm_alloc(nbytes, PTE_READ_WRITE);
     if (!p) {
